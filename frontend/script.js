@@ -370,48 +370,50 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="glass-panel" style="margin-top: 1rem; padding: 1.5rem;">
                 
-                <!-- Brand Core Section -->
-                <div class="metadata-section">
-                    <h4>Brand Core</h4>
-                    <div class="metadata-grid">
-                        <div class="metadata-item">
-                            <strong>Vibe</strong>
-                            <span>${project.brand_vibe || '-'}</span>
-                        </div>
-                        <div class="metadata-item">
-                            <strong>Lighting</strong>
-                            <span>${project.brand_lighting || '-'}</span>
-                        </div>
-                        <div class="metadata-item">
-                            <strong>Colors</strong>
-                            <span>${project.brand_colors || '-'}</span>
-                        </div>
-                        <div class="metadata-item">
-                            <strong>Subject</strong>
-                            <span>${project.brand_subject || '-'}</span>
+                <div class="metadata-columns">
+                    <!-- Brand Core Section -->
+                    <div class="metadata-section">
+                        <h4>Brand Core</h4>
+                        <div class="metadata-grid">
+                            <div class="metadata-item">
+                                <strong>Vibe</strong>
+                                <span>${project.brand_vibe || '-'}</span>
+                            </div>
+                            <div class="metadata-item">
+                                <strong>Lighting</strong>
+                                <span>${project.brand_lighting || '-'}</span>
+                            </div>
+                            <div class="metadata-item">
+                                <strong>Colors</strong>
+                                <span>${project.brand_colors || '-'}</span>
+                            </div>
+                            <div class="metadata-item">
+                                <strong>Subject</strong>
+                                <span>${project.brand_subject || '-'}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Project Specifics Section -->
-                <div class="metadata-section">
-                    <h4>Project Specifics</h4>
-                    <div class="metadata-grid">
-                        <div class="metadata-item">
-                            <strong>Vibe</strong>
-                            <span>${project.project_vibe || '-'}</span>
-                        </div>
-                        <div class="metadata-item">
-                            <strong>Lighting</strong>
-                            <span>${project.project_lighting || '-'}</span>
-                        </div>
-                        <div class="metadata-item">
-                            <strong>Colors</strong>
-                            <span>${project.project_colors || '-'}</span>
-                        </div>
-                        <div class="metadata-item">
-                            <strong>Subject</strong>
-                            <span>${project.project_subject || '-'}</span>
+                    <!-- Project Specifics Section -->
+                    <div class="metadata-section">
+                        <h4>Project Specifics</h4>
+                        <div class="metadata-grid">
+                            <div class="metadata-item">
+                                <strong>Vibe</strong>
+                                <span>${project.project_vibe || '-'}</span>
+                            </div>
+                            <div class="metadata-item">
+                                <strong>Lighting</strong>
+                                <span>${project.project_lighting || '-'}</span>
+                            </div>
+                            <div class="metadata-item">
+                                <strong>Colors</strong>
+                                <span>${project.project_colors || '-'}</span>
+                            </div>
+                            <div class="metadata-item">
+                                <strong>Subject</strong>
+                                <span>${project.project_subject || '-'}</span>
+                            </div>
                         </div>
                     </div>
                 </div>

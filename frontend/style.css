@@ -6,6 +6,8 @@
     --accent-hover: #651fff;
     --text-primary: #ffffff;
     --text-secondary: #a0a0b0;
+    --text-highlight: #FFD700;
+    /* Gold for highlights */
     --border-color: rgba(255, 255, 255, 0.1);
     --glass-border: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -467,6 +469,51 @@ textarea {
     color: white;
 }
 
+/* Metadata Styling */
+.metadata-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 900px) {
+    .metadata-columns {
+        grid-template-columns: 1fr;
+    }
+}
+
+.metadata-section {
+    /* margin-bottom removed as it's handled by columns gap or internal spacing */
+    height: 100%;
+}
+
+.metadata-section h4 {
+    color: var(--accent-color);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    border-bottom: 1px solid rgba(124, 77, 255, 0.3);
+    padding-bottom: 0.5rem;
+    display: block;
+    /* Changed to block for full width underline */
+}
+
+.metadata-grid {
+    display: flex;
+    /* Changed to flex column for vertical stacking within the column */
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.metadata-item {
+    border: 1px solid rgba(124, 77, 255, 0.3);
+    /* Slightly subtler border */
+    border-radius: 8px;
+    padding: 15px;
+    background: rgba(124, 77, 255, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
 .badge {
     background: rgba(124, 77, 255, 0.2);
     color: var(--accent-color);
@@ -637,6 +684,16 @@ textarea {
     transform: translateY(-5px);
     background: rgba(255, 255, 255, 0.08);
     border-color: var(--accent-color);
+}
+
+.metadata-item strong {
+    display: block;
+    color: var(--text-highlight);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    opacity: 1;
 }
 
 .feature-item i {
