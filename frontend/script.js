@@ -1798,6 +1798,32 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Add Select/Clear All Buttons
+        const controlsDiv = document.createElement('div');
+        controlsDiv.style.marginBottom = '1rem';
+        controlsDiv.style.display = 'flex';
+        controlsDiv.style.gap = '10px';
+
+        const btnSelectAll = document.createElement('button');
+        btnSelectAll.className = 'secondary-btn small-btn';
+        btnSelectAll.innerText = 'Select All';
+        btnSelectAll.onclick = () => {
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = true);
+        };
+
+        const btnClearAll = document.createElement('button');
+        btnClearAll.className = 'secondary-btn small-btn';
+        btnClearAll.innerText = 'Clear All';
+        btnClearAll.onclick = () => {
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = false);
+        };
+
+        controlsDiv.appendChild(btnSelectAll);
+        controlsDiv.appendChild(btnClearAll);
+        container.appendChild(controlsDiv);
+
         const fields = [
             { key: 'brand_vibe', label: 'Brand Vibe' },
             { key: 'brand_lighting', label: 'Brand Lighting' },
@@ -1823,9 +1849,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 div.style.gap = '8px';
 
                 div.innerHTML = `
-                    <input type="checkbox" id="ctx-${containerId}-${field.key}" value="${value}" data-label="${field.label}">
+                    <input type="checkbox" id="ctx-${containerId}-${field.key}" value="${value}" data-label="${field.label}" checked>
                     <label for="ctx-${containerId}-${field.key}" style="font-size: 0.9rem; cursor: pointer;">
-                        <strong>${field.label}:</strong> ${value.length > 30 ? value.substring(0, 30) + '...' : value}
+                        <strong>${field.label}</strong>
                     </label>
                 `;
                 container.appendChild(div);
