@@ -10,6 +10,18 @@ class Project(Base):
     name = Column(String, index=True)
     description = Column(Text, nullable=True)
     context = Column(Text, nullable=True)
+    
+    # Context Engineering
+    brand_vibe = Column(String, nullable=True)
+    brand_lighting = Column(String, nullable=True)
+    brand_colors = Column(String, nullable=True)
+    brand_subject = Column(String, nullable=True)
+    
+    project_vibe = Column(String, nullable=True)
+    project_lighting = Column(String, nullable=True)
+    project_colors = Column(String, nullable=True)
+    project_subject = Column(String, nullable=True)
+
     created_at = Column(DateTime, default=datetime.utcnow)
 
     assets = relationship("Asset", back_populates="project")

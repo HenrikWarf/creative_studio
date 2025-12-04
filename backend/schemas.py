@@ -47,6 +47,16 @@ class ProjectBase(BaseModel):
     name: str
     description: Optional[str] = None
     context: Optional[str] = None
+    
+    brand_vibe: Optional[str] = None
+    brand_lighting: Optional[str] = None
+    brand_colors: Optional[str] = None
+    brand_subject: Optional[str] = None
+    
+    project_vibe: Optional[str] = None
+    project_lighting: Optional[str] = None
+    project_colors: Optional[str] = None
+    project_subject: Optional[str] = None
 
 class ProjectCreate(ProjectBase):
     pass

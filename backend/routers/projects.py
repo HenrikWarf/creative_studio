@@ -19,7 +19,19 @@ def get_db():
 
 @router.post("/", response_model=schemas.Project)
 def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db)):
-    db_project = models.Project(name=project.name, description=project.description, context=project.context)
+    db_project = models.Project(
+        name=project.name, 
+        description=project.description, 
+        context=project.context,
+        brand_vibe=project.brand_vibe,
+        brand_lighting=project.brand_lighting,
+        brand_colors=project.brand_colors,
+        brand_subject=project.brand_subject,
+        project_vibe=project.project_vibe,
+        project_lighting=project.project_lighting,
+        project_colors=project.project_colors,
+        project_subject=project.project_subject
+    )
     db.add(db_project)
     db.commit()
     db.refresh(db_project)
@@ -60,6 +72,16 @@ def update_project(project_id: int, project_update: schemas.ProjectCreate, db: S
     db_project.name = project_update.name
     db_project.description = project_update.description
     db_project.context = project_update.context
+    
+    db_project.brand_vibe = project_update.brand_vibe
+    db_project.brand_lighting = project_update.brand_lighting
+    db_project.brand_colors = project_update.brand_colors
+    db_project.brand_subject = project_update.brand_subject
+    
+    db_project.project_vibe = project_update.project_vibe
+    db_project.project_lighting = project_update.project_lighting
+    db_project.project_colors = project_update.project_colors
+    db_project.project_subject = project_update.project_subject
     
     db.commit()
     db.refresh(db_project)

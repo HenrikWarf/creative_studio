@@ -171,21 +171,41 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnSaveProject) {
         btnSaveProject.addEventListener('click', async () => {
             const name = document.getElementById('new-project-name').value;
-            const description = document.getElementById('new-project-desc').value;
+            const desc = document.getElementById('new-project-desc').value;
             const context = document.getElementById('new-project-context').value;
 
+            const brandVibe = document.getElementById('new-brand-vibe').value;
+            const brandLighting = document.getElementById('new-brand-lighting').value;
+            const brandColors = document.getElementById('new-brand-colors').value;
+            const brandSubject = document.getElementById('new-brand-subject').value;
+
+            const projectVibe = document.getElementById('new-project-vibe').value;
+            const projectLighting = document.getElementById('new-project-lighting').value;
+            const projectColors = document.getElementById('new-project-colors').value;
+            const projectSubject = document.getElementById('new-project-subject').value;
+
             if (!name) {
-                showAlert('Please enter a project name');
+                showAlert('Project name is required');
                 return;
             }
 
             try {
                 const response = await fetch('/projects/', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ name, description, context })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        description: desc,
+                        context: context,
+                        brand_vibe: brandVibe,
+                        brand_lighting: brandLighting,
+                        brand_colors: brandColors,
+                        brand_subject: brandSubject,
+                        project_vibe: projectVibe,
+                        project_lighting: projectLighting,
+                        project_colors: projectColors,
+                        project_subject: projectSubject
+                    })
                 });
 
                 if (response.ok) {
@@ -348,9 +368,61 @@ document.addEventListener('DOMContentLoaded', () => {
                     <i class="fa-solid fa-pen"></i> Edit
                 </button>
             </div>
-            <div class="glass-panel" style="margin-top: 1rem; padding: 1rem;">
-                <h4>Context / Guidelines</h4>
-                <p>${project.context || 'No context provided.'}</p>
+            <div class="glass-panel" style="margin-top: 1rem; padding: 1.5rem;">
+                
+                <!-- Brand Core Section -->
+                <div class="metadata-section">
+                    <h4>Brand Core</h4>
+                    <div class="metadata-grid">
+                        <div class="metadata-item">
+                            <strong>Vibe</strong>
+                            <span>${project.brand_vibe || '-'}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <strong>Lighting</strong>
+                            <span>${project.brand_lighting || '-'}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <strong>Colors</strong>
+                            <span>${project.brand_colors || '-'}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <strong>Subject</strong>
+                            <span>${project.brand_subject || '-'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Specifics Section -->
+                <div class="metadata-section">
+                    <h4>Project Specifics</h4>
+                    <div class="metadata-grid">
+                        <div class="metadata-item">
+                            <strong>Vibe</strong>
+                            <span>${project.project_vibe || '-'}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <strong>Lighting</strong>
+                            <span>${project.project_lighting || '-'}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <strong>Colors</strong>
+                            <span>${project.project_colors || '-'}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <strong>Subject</strong>
+                            <span>${project.project_subject || '-'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Overall Context -->
+                <div class="metadata-section" style="margin-bottom: 0;">
+                    <h4>Overall Context / Guidelines</h4>
+                    <div class="metadata-item" style="width: 100%;">
+                        <span>${project.context || 'No context provided.'}</span>
+                    </div>
+                </div>
             </div>
             
             <button id="btn-select-project-dynamic" class="primary-btn" style="margin: 1rem 0;">Select Project</button>
@@ -641,6 +713,17 @@ document.addEventListener('DOMContentLoaded', () => {
         editProjectName.value = currentProjectData.name;
         editProjectDesc.value = currentProjectData.description || '';
         editProjectContext.value = currentProjectData.context || '';
+
+        document.getElementById('edit-brand-vibe').value = currentProjectData.brand_vibe || '';
+        document.getElementById('edit-brand-lighting').value = currentProjectData.brand_lighting || '';
+        document.getElementById('edit-brand-colors').value = currentProjectData.brand_colors || '';
+        document.getElementById('edit-brand-subject').value = currentProjectData.brand_subject || '';
+
+        document.getElementById('edit-project-vibe').value = currentProjectData.project_vibe || '';
+        document.getElementById('edit-project-lighting').value = currentProjectData.project_lighting || '';
+        document.getElementById('edit-project-colors').value = currentProjectData.project_colors || '';
+        document.getElementById('edit-project-subject').value = currentProjectData.project_subject || '';
+
         modalEditProject.hidden = false;
     }
 
@@ -648,9 +731,19 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSaveProjectChanges.addEventListener('click', async () => {
             if (!currentProjectData || !currentProjectData.id) return;
 
-            const name = editProjectName.value;
-            const desc = editProjectDesc.value;
-            const context = editProjectContext.value;
+            const name = document.getElementById('edit-project-name').value;
+            const desc = document.getElementById('edit-project-desc').value;
+            const context = document.getElementById('edit-project-context').value;
+
+            const brandVibe = document.getElementById('edit-brand-vibe').value;
+            const brandLighting = document.getElementById('edit-brand-lighting').value;
+            const brandColors = document.getElementById('edit-brand-colors').value;
+            const brandSubject = document.getElementById('edit-brand-subject').value;
+
+            const projectVibe = document.getElementById('edit-project-vibe').value;
+            const projectLighting = document.getElementById('edit-project-lighting').value;
+            const projectColors = document.getElementById('edit-project-colors').value;
+            const projectSubject = document.getElementById('edit-project-subject').value;
 
             if (!name) {
                 showAlert('Project name is required');
@@ -661,7 +754,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(`/projects/${currentProjectData.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, description: desc, context })
+                    body: JSON.stringify({
+                        name: name,
+                        description: desc,
+                        context: context,
+                        brand_vibe: brandVibe,
+                        brand_lighting: brandLighting,
+                        brand_colors: brandColors,
+                        brand_subject: brandSubject,
+                        project_vibe: projectVibe,
+                        project_lighting: projectLighting,
+                        project_colors: projectColors,
+                        project_subject: projectSubject
+                    })
                 });
 
                 if (response.ok) {
@@ -1679,4 +1784,113 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    // Context Engineering Logic
+    function renderContextAccordion(containerId, project) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        if (!project) {
+            container.innerHTML = '<p class="text-muted">Please select a project to use context features.</p>';
+            return;
+        }
+
+        const fields = [
+            { key: 'brand_vibe', label: 'Brand Vibe' },
+            { key: 'brand_lighting', label: 'Brand Lighting' },
+            { key: 'brand_colors', label: 'Brand Colors' },
+            { key: 'brand_subject', label: 'Brand Subject' },
+            { key: 'project_vibe', label: 'Project Vibe' },
+            { key: 'project_lighting', label: 'Project Lighting' },
+            { key: 'project_colors', label: 'Project Colors' },
+            { key: 'project_subject', label: 'Project Subject' },
+            { key: 'context', label: 'Overall Context' }
+        ];
+
+        let hasData = false;
+
+        fields.forEach(field => {
+            const value = project[field.key];
+            if (value) {
+                hasData = true;
+                const div = document.createElement('div');
+                div.className = 'checkbox-wrapper';
+                div.style.display = 'flex';
+                div.style.alignItems = 'center';
+                div.style.gap = '8px';
+
+                div.innerHTML = `
+                    <input type="checkbox" id="ctx-${containerId}-${field.key}" value="${value}" data-label="${field.label}">
+                    <label for="ctx-${containerId}-${field.key}" style="font-size: 0.9rem; cursor: pointer;">
+                        <strong>${field.label}:</strong> ${value.length > 30 ? value.substring(0, 30) + '...' : value}
+                    </label>
+                `;
+                container.appendChild(div);
+            }
+        });
+
+        if (!hasData) {
+            container.innerHTML = '<p class="text-muted">No context data available for this project.</p>';
+        }
+    }
+
+    function setupContextAccordion(btnId, contentId, checkboxesId, applyBtnId, targetInputId) {
+        const btn = document.getElementById(btnId);
+        const content = document.getElementById(contentId);
+        const applyBtn = document.getElementById(applyBtnId);
+        const targetInput = document.getElementById(targetInputId);
+
+        if (btn && content) {
+            btn.addEventListener('click', () => {
+                const isHidden = content.hidden;
+                content.hidden = !isHidden;
+                const icon = btn.querySelector('.fa-chevron-down');
+                if (icon) {
+                    icon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+                }
+
+                // Re-render if opening and we have a project
+                if (isHidden && currentProjectId) {
+                    // We need the full project data. If we only have ID, we might need to find it in 'projects' array
+                    // or fetch it. 'projects' array is populated by loadProjects.
+                    const project = projects.find(p => p.id === currentProjectId);
+                    if (project) {
+                        renderContextAccordion(checkboxesId, project);
+                    }
+                }
+            });
+        }
+
+        if (applyBtn && targetInput) {
+            applyBtn.addEventListener('click', () => {
+                const checkboxes = document.querySelectorAll(`#${checkboxesId} input[type="checkbox"]:checked`);
+                if (checkboxes.length === 0) {
+                    showAlert('Please select at least one context element.');
+                    return;
+                }
+
+                let contextText = '';
+                checkboxes.forEach(cb => {
+                    contextText += `${cb.dataset.label}: ${cb.value}. `;
+                });
+
+                // Append to input
+                const currentVal = targetInput.value;
+                targetInput.value = currentVal ? currentVal + ' ' + contextText : contextText;
+
+                // Visual feedback
+                const originalText = applyBtn.innerText;
+                applyBtn.innerText = 'Applied!';
+                setTimeout(() => {
+                    applyBtn.innerText = originalText;
+                }, 1500);
+            });
+        }
+    }
+
+    // Initialize Context Accordions
+    setupContextAccordion('btn-context-accordion-img', 'context-content-img', 'context-checkboxes-img', 'btn-apply-context-img', 'img-prompt');
+    setupContextAccordion('btn-context-accordion-edit', 'context-content-edit', 'context-checkboxes-edit', 'btn-apply-context-edit', 'edit-instruction');
+
 });
