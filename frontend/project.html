@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Details - Creative Studio</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="logo">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>Creative Studio</span>
+            </div>
+
+            <div id="sidebar-project-display" class="sidebar-project" style="opacity: 0.5;">
+                <i class="fa-solid fa-folder-open" style="color: var(--text-secondary);"></i>
+                <span id="sidebar-project-name">No project selected</span>
+            </div>
+            <ul class="nav-links">
+                <li data-target="home" onclick="window.location.href='index.html#home'">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Home</span>
+                </li>
+                <li class="active" data-target="projects" onclick="window.location.href='index.html#projects'">
+                    <i class="fa-solid fa-folder"></i>
+                    <span>Projects</span>
+                </li>
+                <li data-target="image-creation" onclick="window.location.href='index.html#image-creation'">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Image Creation</span>
+                </li>
+                <li data-target="image-editing" onclick="window.location.href='index.html#image-editing'">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    <span>Image Magic</span>
+                </li>
+                <li data-target="virtual-tryon" onclick="window.location.href='index.html#virtual-tryon'">
+                    <i class="fa-solid fa-shirt"></i>
+                    <span>Virtual Try-on</span>
+                </li>
+                <li data-target="video-creation" onclick="window.location.href='index.html#video-creation'">
+                    <i class="fa-solid fa-video"></i>
+                    <span>Video Creation</span>
+                </li>
+            </ul>
+        </nav>
+
+        <main class="content-area">
+            <!-- Project Details View -->
+            <section id="project-details-view" class="active-section">
+                <div class="workspace">
+                    <div class="glass-panel full-width" style="width: 100%;">
+                        <button id="btn-back-projects" class="icon-btn"
+                            onclick="window.location.href='index.html#projects'" style="margin-bottom: 1rem;">
+                            <i class="fa-solid fa-arrow-left"></i> Back to Projects
+                        </button>
+                        <div id="project-details">
+                            <!-- Injected by script.js -->
+                            <div style="text-align: center; padding: 2rem;">
+                                <i class="fa-solid fa-spinner fa-spin"></i> Loading project details...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Edit Project Modal -->
+    <div id="modal-edit-project" class="modal" hidden>
+        <div class="modal-content glass-panel">
+            <span class="close-modal" id="close-modal-edit-project">&times;</span>
+            <h2>Edit Project</h2>
+            <div class="input-group">
+                <label>Project Name</label>
+                <input type="text" id="edit-project-name">
+            </div>
+            <div class="input-group">
+                <label>Description</label>
+                <textarea id="edit-project-desc"></textarea>
+            </div>
+            <div class="input-group">
+                <label>Context / Brand Guidelines</label>
+                <textarea id="edit-project-context" style="height: 100px;"></textarea>
+            </div>
+            <button id="btn-save-project-changes" class="primary-btn full-width">Save Changes</button>
+        </div>
+    </div>
+    </section>
+    </main>
+    </div>
+
+    <!-- Create Project Modal -->
+    <div id="modal-create-project" class="modal" hidden>
+        <div class="modal-content glass-panel">
+            <span class="close-modal" id="close-modal-create">&times;</span>
+            <h2>Create New Project</h2>
+            <div class="input-group">
+                <label>Project Name</label>
+                <input type="text" id="new-project-name" placeholder="e.g. Summer Campaign 2024">
+            </div>
+            <div class="input-group">
+                <label>Description</label>
+                <textarea id="new-project-desc" placeholder="Brief description of the project..."></textarea>
+            </div>
+            <div class="input-group">
+                <label>Context / Brand Guidelines</label>
+                <textarea id="new-project-context"
+                    placeholder="Enter brand voice, color preferences, target audience, etc..."
+                    style="height: 100px;"></textarea>
+            </div>
+            <button id="btn-create-project-confirm" class="primary-btn full-width">Create Project</button>
+        </div>
+    </div>
+
+    <!-- Generic Alert Modal -->
+    <div id="alert-modal" class="modal" hidden>
+        <div class="modal-content glass-panel" style="width: 400px; text-align: center;">
+            <span class="close-modal" id="close-alert">&times;</span>
+            <div style="margin-bottom: 1.5rem;">
+                <i class="fa-solid fa-circle-info" style="font-size: 3rem; color: var(--accent-color);"></i>
+            </div>
+            <p id="alert-message" style="font-size: 1.1rem; margin-bottom: 1.5rem;">Alert Message</p>
+            <button id="btn-alert-ok" class="primary-btn full-width">OK</button>
+        </div>
+    </div>
+
+    <!-- Edit Image Modal -->
+    <div id="modal-edit" class="modal" hidden>
+        <div class="modal-content glass-panel"
+            style="width: 90%; max-width: 1000px; height: 90vh; display: flex; flex-direction: column;">
+            <span class="close-modal" id="close-edit-modal">&times;</span>
+            <div style="margin-bottom: 1rem;">
+                <h2>Edit Image</h2>
+            </div>
+
+            <div class="edit-workspace" style="flex: 1; display: flex; gap: 1rem; overflow: hidden;">
+                <!-- Main Image View -->
+                <div class="edit-main-view"
+                    style="flex: 1; background: rgba(0,0,0,0.3); border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                    <img id="edit-main-img" src="" alt="Editing"
+                        style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                </div>
+
+                <!-- Sidebar Controls -->
+                <div class="edit-controls" style="width: 300px; display: flex; flex-direction: column; gap: 1rem;">
+                    <div class="input-group">
+                        <label>Edit Instruction</label>
+                        <textarea id="edit-instruction" placeholder="e.g. Make it black and white..."
+                            style="height: 100px;"></textarea>
+                    </div>
+                    <button id="btn-generate-edit" class="primary-btn">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Edit
+                    </button>
+
+                    <div class="history-section" style="flex: 1; overflow-y: auto; margin-top: 1rem;">
+                        <label>History</label>
+                        <div id="edit-history-list" class="history-list"
+                            style="display: flex; flex-direction: column; gap: 10px; margin-top: 5px;">
+                            <!-- Thumbnails injected here -->
+                        </div>
+                    </div>
+
+                    <button id="btn-save-edit" class="primary-btn"
+                        style="background-color: var(--accent-color); margin-top: auto;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save to Project
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox-modal" class="lightbox" hidden>
+        <span class="close-lightbox">&times;</span>
+        <button class="lightbox-nav prev-btn"><i class="fa-solid fa-chevron-left"></i></button>
+        <div class="lightbox-content">
+            <img id="lightbox-img" src="" alt="Full view">
+            <video id="lightbox-video" controls hidden></video>
+        </div>
+        <button class="lightbox-nav next-btn"><i class="fa-solid fa-chevron-right"></i></button>
+        <div class="lightbox-caption"></div>
+        <button id="btn-lightbox-edit" class="secondary-btn"
+            style="position: absolute; bottom: 20px; right: 20px; z-index: 2002;">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Edit Image
+        </button>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>
