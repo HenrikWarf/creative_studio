@@ -443,21 +443,95 @@
                     <h1>Video Creation</h1>
                     <p>Create stunning motion content with Veo</p>
                 </header>
-                <div class="workspace">
-                    <div class="controls glass-panel">
-                        <div class="input-group">
-                            <label>Prompt</label>
-                            <textarea id="video-prompt" placeholder="Describe the motion and scene..."></textarea>
+
+                <!-- Context Accordion (Reused structure) -->
+                <div class="glass-panel full-width" style="margin-bottom: 1rem; padding: 0;">
+                    <button class="accordion-header" id="btn-context-accordion-video">
+                        <span><i class="fa-solid fa-layer-group"></i> Context Engineering <small class="text-muted"
+                                style="font-size: 0.8em; margin-left: 10px;">(Need to apply the context to make use of
+                                created context)</small></span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div class="accordion-content" id="context-content-video" hidden>
+                        <div style="padding: 1rem;">
+                            <p class="text-muted" style="margin-bottom: 1rem;">Select context elements to include in
+                                your prompt.</p>
+                            <div id="context-checkboxes-video"
+                                style="display: grid; grid-template-columns: auto auto; justify-content: start; gap: 10px 40px;">
+                                <!-- Checkboxes injected here -->
+                            </div>
+                            <button id="btn-apply-context-video" class="secondary-btn small-btn"
+                                style="margin-top: 1rem; white-space: nowrap; width: auto;">
+                                Apply to Prompt
+                            </button>
                         </div>
-                        <button id="btn-generate-video" class="primary-btn">
-                            <i class="fa-solid fa-video"></i> Generate Video
-                        </button>
                     </div>
-                    <div class="preview-area glass-panel">
-                        <div id="video-result-container" class="empty-state">
-                            <i class="fa-solid fa-film"></i>
-                            <p>Generated video will appear here</p>
+                </div>
+
+                <div class="glass-panel full-width" style="margin-bottom: 1rem;">
+                    <div class="creation-controls-grid">
+                        <!-- Left Column: Prompt -->
+                        <div class="input-group"
+                            style="display: flex; flex-direction: column; height: 100%; gap: 2rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <label>User Prompt</label>
+                                <button id="btn-optimize-video" class="icon-btn" title="Enhance with Gemini"
+                                    style="font-size: 0.9rem; color: var(--accent-color);">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Enhance
+                                </button>
+                            </div>
+                            <textarea id="video-prompt" class="large-prompt"
+                                placeholder="Describe the motion and scene..."
+                                style="flex: 1; min-height: 150px; width: 100%;"></textarea>
+
+                            <div style="flex: 1; display: flex; flex-direction: column; margin-bottom: 1rem;">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                    <label>Context <span id="video-context-version"
+                                            style="font-size: 0.8rem; color: var(--accent-color); margin-left: 0.5rem;"></span></label>
+                                </div>
+                                <textarea id="video-context" class="large-prompt"
+                                    placeholder="Applied context will appear here..." readonly
+                                    style="flex: 1; min-height: 100px; width: 100%; font-size: 0.9rem; opacity: 0.8;"></textarea>
+                            </div>
                         </div>
+
+                        <!-- Right Column: Options -->
+                        <div class="creation-options">
+                            <div class="input-group">
+                                <label>Aspect Ratio</label>
+                                <select id="video-aspect-ratio">
+                                    <option value="16:9">16:9 (Landscape)</option>
+                                    <option value="9:16">9:16 (Portrait)</option>
+                                    <option value="1:1">1:1 (Square)</option>
+                                </select>
+                            </div>
+
+                            <div class="toggle-container">
+                                <span class="toggle-label">Speed</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="model-toggle-video">
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="toggle-label">Quality</span>
+                            </div>
+
+                            <button id="btn-generate-video" class="primary-btn">
+                                <i class="fa-solid fa-video"></i> Generate Video
+                            </button>
+                            <button id="btn-reset-video" class="secondary-btn full-width"
+                                style="justify-content: center;">
+                                <i class="fa-solid fa-eraser"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Output Section -->
+                <div class="preview-area glass-panel full-width" style="min-height: 400px;">
+                    <div id="video-result-container" class="empty-state">
+                        <i class="fa-solid fa-film"></i>
+                        <p>Generated video will appear here</p>
                     </div>
                 </div>
             </section>

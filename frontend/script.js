@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (img) img.src = asset.url;
         if (prompt) prompt.textContent = asset.prompt || 'No prompt saved.';
         if (modelType) modelType.textContent = asset.model_type || 'Unknown';
-        if (contextVersion) contextVersion.textContent = asset.context_version || 'Unknown';
+        if (contextVersion) contextVersion.textContent = asset.context_version || 'Not Applied';
 
         modal.hidden = false;
     };
@@ -1635,10 +1635,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // In `loadContextVersions`, we might set something.
             // For now, I'll default to "Custom/Draft" if not set.
 
-            if (window.activeContextVersionName) {
-                payload.context_version = window.activeContextVersionName;
+            if (contextData) {
+                if (window.activeContextVersionName) {
+                    payload.context_version = window.activeContextVersionName;
+                } else {
+                    payload.context_version = 'Custom / Draft';
+                }
             } else {
-                payload.context_version = 'Custom / Draft';
+                payload.context_version = '';
             }
 
             if (imageSrc.startsWith('http')) {
@@ -1973,53 +1977,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Video Creation ---
-    const btnGenerateVideo = document.getElementById('btn-generate-video');
-    const videoPrompt = document.getElementById('video-prompt');
-    const videoResultContainer = document.getElementById('video-result-container');
 
-    if (btnGenerateVideo) {
-        btnGenerateVideo.addEventListener('click', async () => {
-            if (!currentProjectId) {
-                showAlert('Please select or create a project first.');
-                return;
-            }
-
-            const prompt = videoPrompt.value;
-            if (!prompt) {
-                showAlert('Please enter a prompt');
-                return;
-            }
-
-            setLoading(btnGenerateVideo, true);
-
-            const formData = new FormData();
-            formData.append('prompt', prompt);
-
-            if (currentProjectId) {
-                formData.append('project_id', currentProjectId);
-            }
-
-            try {
-                const response = await fetch('/video-creation/generate', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
-
-                if (response.ok) {
-                    videoResultContainer.innerHTML = `<video controls src="${data.video_url}"></video>`;
-                } else {
-                    showAlert('Error: ' + data.detail);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showAlert('An error occurred');
-            } finally {
-                setLoading(btnGenerateVideo, false);
-            }
-        });
-    }
 
     function setLoading(btn, isLoading) {
         if (isLoading) {
@@ -2399,6 +2357,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Context Accordions
     setupContextAccordion('btn-context-accordion-img', 'context-content-img', 'context-checkboxes-img', 'btn-apply-context-img', 'img-context', 'img-context-version');
     setupContextAccordion('btn-context-accordion-edit', 'context-content-edit', 'context-checkboxes-edit', 'btn-apply-context-edit', 'edit-context', 'edit-context-version');
+    setupContextAccordion('btn-context-accordion-video', 'context-content-video', 'context-checkboxes-video', 'btn-apply-context-video', 'video-context', 'video-context-version');
 
     // --- Context Engineering Page Logic ---
     // --- Context Engineering Page Logic ---
@@ -3220,6 +3179,175 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeInfoModal) {
         closeInfoModal.addEventListener('click', () => {
             document.getElementById('modal-asset-info').hidden = true;
+        });
+    }
+
+    // --- Video Creation Logic ---
+    const btnGenerateVideo = document.getElementById('btn-generate-video');
+    const btnResetVideo = document.getElementById('btn-reset-video');
+    const videoPrompt = document.getElementById('video-prompt');
+    const videoContext = document.getElementById('video-context');
+    const videoAspectRatio = document.getElementById('video-aspect-ratio');
+    const videoResultContainer = document.getElementById('video-result-container');
+    const btnContextAccordionVideo = document.getElementById('btn-context-accordion-video');
+    const contextContentVideo = document.getElementById('context-content-video');
+    const btnApplyContextVideo = document.getElementById('btn-apply-context-video');
+    const contextCheckboxesVideo = document.getElementById('context-checkboxes-video');
+    const videoContextVersion = document.getElementById('video-context-version');
+    const modelToggleVideo = document.getElementById('model-toggle-video');
+
+
+
+
+    if (btnResetVideo) {
+        btnResetVideo.addEventListener('click', () => {
+            videoPrompt.value = '';
+            videoContext.value = '';
+            videoContextVersion.textContent = '';
+            videoAspectRatio.value = '16:9';
+            if (modelToggleVideo) modelToggleVideo.checked = false; // Reset to Speed (default unchecked?) or Quality?
+            // Usually unchecked is left (Speed), checked is right (Quality).
+            // Let's assume unchecked = Speed, Checked = Quality based on label placement.
+
+            videoResultContainer.innerHTML = `
+                <i class="fa-solid fa-film"></i>
+                <p>Generated video will appear here</p>
+            `;
+        });
+    }
+
+    if (btnGenerateVideo) {
+        btnGenerateVideo.addEventListener('click', async () => {
+            if (!videoPrompt.value) {
+                showAlert('Please enter a prompt for the video.');
+                return;
+            }
+
+            setLoading(btnGenerateVideo, true);
+            videoResultContainer.innerHTML = `
+                <div class="loading-state">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-color);"></i>
+                    <p style="margin-top: 1rem;">Generating video... This may take a minute.</p>
+                </div>
+            `;
+
+            try {
+                const formData = new FormData();
+                const fullPrompt = videoContext.value ? `${videoPrompt.value}\n\nContext:\n${videoContext.value}` : videoPrompt.value;
+
+                formData.append('prompt', fullPrompt);
+                formData.append('aspect_ratio', videoAspectRatio.value);
+
+                // Quality Selection
+                // Unchecked = Speed, Checked = Quality
+                const quality = modelToggleVideo && modelToggleVideo.checked ? 'quality' : 'speed';
+                formData.append('quality', quality);
+
+                // Note: We are NOT sending project_id here to prevent automatic saving.
+                // We will handle saving manually via the "Save to Project" button.
+                /*
+                if (currentProjectId) {
+                    formData.append('project_id', currentProjectId);
+                }
+                */
+
+                const response = await fetch('/video-creation/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Remove autoplay, add controls
+                    videoResultContainer.innerHTML = `
+                        <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <video controls style="max-width: 100%; max-height: 80vh; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                <source src="${data.video_url}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                            <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                                <a href="${data.video_url}" download="generated_video.mp4" class="secondary-btn">
+                                    <i class="fa-solid fa-download"></i> Download
+                                </a>
+                                <button id="btn-save-video-project" class="primary-btn">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save to Project
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    // Add event listener for Save to Project
+                    const btnSaveVideoProject = document.getElementById('btn-save-video-project');
+                    if (btnSaveVideoProject) {
+                        btnSaveVideoProject.addEventListener('click', async () => {
+                            if (!currentProjectId) {
+                                showAlert('Please select a project first.');
+                                return;
+                            }
+
+                            const originalText = btnSaveVideoProject.innerHTML;
+                            btnSaveVideoProject.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+                            btnSaveVideoProject.disabled = true;
+
+                            try {
+                                const saveFormData = new FormData();
+                                saveFormData.append('project_id', currentProjectId);
+                                saveFormData.append('blob_name', data.blob_name); // Use the blob name from response
+                                saveFormData.append('prompt', fullPrompt);
+                                saveFormData.append('model_type', quality === 'quality' ? 'Veo 3.1 (Quality)' : 'Veo 3.1 (Speed)');
+
+                                if (videoContext.value) {
+                                    saveFormData.append('context_data', videoContext.value);
+                                    if (window.activeContextVersionName) {
+                                        saveFormData.append('context_version', window.activeContextVersionName);
+                                    } else {
+                                        saveFormData.append('context_version', 'Custom / Draft');
+                                    }
+                                }
+
+                                const saveResponse = await fetch('/video-creation/save', {
+                                    method: 'POST',
+                                    body: saveFormData
+                                });
+
+                                if (saveResponse.ok) {
+                                    showAlert('Video saved to project successfully!');
+                                    btnSaveVideoProject.innerHTML = '<i class="fa-solid fa-check"></i> Saved';
+                                } else {
+                                    const saveData = await saveResponse.json();
+                                    showAlert('Failed to save video: ' + (saveData.detail || 'Unknown error'));
+                                    btnSaveVideoProject.innerHTML = originalText;
+                                    btnSaveVideoProject.disabled = false;
+                                }
+                            } catch (error) {
+                                console.error('Error saving video:', error);
+                                showAlert('An error occurred while saving.');
+                                btnSaveVideoProject.innerHTML = originalText;
+                                btnSaveVideoProject.disabled = false;
+                            }
+                        });
+                    }
+
+                } else {
+                    videoResultContainer.innerHTML = `
+                        <div class="error-state">
+                            <i class="fa-solid fa-triangle-exclamation" style="font-size: 2rem; color: var(--error-color);"></i>
+                            <p style="margin-top: 1rem;">Error: ${data.detail || 'Failed to generate video'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                videoResultContainer.innerHTML = `
+                    <div class="error-state">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 2rem; color: var(--error-color);"></i>
+                        <p style="margin-top: 1rem;">An error occurred. Please try again.</p>
+                    </div>
+                `;
+            } finally {
+                setLoading(btnGenerateVideo, false);
+            }
         });
     }
 
