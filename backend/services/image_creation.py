@@ -181,7 +181,8 @@ async def save_image_asset(
     prompt: str,
     db: Session,
     model_type: Optional[str] = None,
-    context_version: Optional[str] = None
+    context_version: Optional[str] = None,
+    context_data: Optional[str] = None
 ) -> str:
     """
     Decodes Base64 image, uploads to GCS, and creates DB asset.
@@ -201,7 +202,8 @@ async def save_image_asset(
             url=blob_name,
             prompt=prompt,
             model_type=model_type,
-            context_version=context_version
+            context_version=context_version,
+            context_data=context_data
         )
         db.add(asset)
         db.commit()

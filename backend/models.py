@@ -36,6 +36,7 @@ class Asset(Base):
     prompt = Column(Text, nullable=True)
     model_type = Column(String, nullable=True)
     context_version = Column(String, nullable=True)
+    context_data = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     project = relationship("Project", back_populates="assets")

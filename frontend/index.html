@@ -119,95 +119,116 @@
                         </div>
                     </div>
                 </div>
-                <div class="workspace">
-                    <div class="controls glass-panel">
-                        <div class="input-group">
+                <div class="glass-panel full-width" style="margin-bottom: 1rem;">
+                    <div class="creation-controls-grid">
+                        <!-- Left Column: Prompt -->
+                        <div class="input-group"
+                            style="display: flex; flex-direction: column; height: 100%; gap: 2rem;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <label>Prompt</label>
+                                <label>User Prompt</label>
                                 <button id="btn-optimize-img" class="icon-btn" title="Enhance with Gemini"
                                     style="font-size: 0.9rem; color: var(--accent-color);">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i> Enhance
                                 </button>
                             </div>
-                            <textarea id="img-prompt" placeholder="Describe your vision..."></textarea>
-                        </div>
-                        <div class="input-group">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <label>Style</label>
-                                <button id="btn-optimize-img-style" class="icon-btn enhance-field-btn"
-                                    title="Enhance with Gemini" data-target-field="img-style"
-                                    style="font-size: 0.9rem; color: var(--accent-color);">
-                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Enhance
-                                </button>
-                            </div>
-                            <select id="img-style">
-                                <option value="">No specific style</option>
-                                <optgroup label="Fashion & Aesthetic">
-                                    <option value="Editorial High Fashion">Editorial / High Fashion</option>
-                                    <option value="Luxury Glamour">Luxury / Glamour</option>
-                                    <option value="Street Style">Street Style</option>
-                                    <option value="Minimalist">Minimalist</option>
-                                    <option value="Boho Bohemian">Boho / Bohemian</option>
-                                    <option value="Y2K Retro">Y2K / Retro</option>
-                                    <option value="Vintage">Vintage</option>
-                                    <option value="Cyberpunk Futuristic">Cyberpunk / Futuristic</option>
-                                    <option value="Avant-Garde">Avant-Garde</option>
-                                </optgroup>
-                                <optgroup label="Photography & Lighting">
-                                    <option value="Cinematic">Cinematic</option>
-                                    <option value="Studio Lighting">Studio Lighting</option>
-                                    <option value="Golden Hour">Golden Hour</option>
-                                    <option value="Neon Night Life">Neon / Night Life</option>
-                                    <option value="Black and White Noir">Black & White / Noir</option>
-                                    <option value="Polaroid Film Grain">Polaroid / Film Grain</option>
-                                    <option value="Soft Pastel">Soft / Pastel</option>
-                                </optgroup>
-                                <optgroup label="Product Focus">
-                                    <option value="Flat Lay">Flat Lay</option>
-                                    <option value="Macro Detail">Macro / Detail</option>
-                                </optgroup>
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <label>Reference Assets</label>
-                            <div class="reference-buttons">
-                                <button id="btn-open-style" class="secondary-btn full-width">
-                                    <i class="fa-solid fa-palette"></i> Style Reference
-                                    <span id="badge-style" class="badge-count" hidden>0</span>
-                                </button>
-                                <button id="btn-open-product" class="secondary-btn full-width">
-                                    <i class="fa-solid fa-shirt"></i> Product Reference
-                                    <span id="badge-product" class="badge-count" hidden>0</span>
-                                </button>
-                                <button id="btn-open-scene" class="secondary-btn full-width">
-                                    <i class="fa-solid fa-image"></i> Scene Reference
-                                    <span id="badge-scene" class="badge-count" hidden>0</span>
-                                </button>
+                            <textarea id="img-prompt" class="large-prompt" placeholder="Describe your vision..."
+                                style="flex: 1; min-height: 150px; width: 100%;"></textarea>
+
+                            <div style="flex: 1; display: flex; flex-direction: column; margin-bottom: 1rem;">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                    <label>Context <span id="img-context-version"
+                                            style="font-size: 0.8rem; color: var(--accent-color); margin-left: 0.5rem;"></span></label>
+                                </div>
+                                <textarea id="img-context" class="large-prompt"
+                                    placeholder="Applied context will appear here..." readonly
+                                    style="flex: 1; min-height: 100px; width: 100%; font-size: 0.9rem; opacity: 0.8;"></textarea>
                             </div>
                         </div>
 
+                        <!-- Right Column: Options -->
+                        <div class="creation-options">
+                            <div class="input-group">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <label>Style</label>
+                                    <button id="btn-optimize-img-style" class="icon-btn enhance-field-btn"
+                                        title="Enhance with Gemini" data-target-field="img-style"
+                                        style="font-size: 0.9rem; color: var(--accent-color);">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    </button>
+                                </div>
+                                <select id="img-style">
+                                    <option value="">No specific style</option>
+                                    <optgroup label="Fashion & Aesthetic">
+                                        <option value="Editorial High Fashion">Editorial / High Fashion</option>
+                                        <option value="Luxury Glamour">Luxury / Glamour</option>
+                                        <option value="Street Style">Street Style</option>
+                                        <option value="Minimalist">Minimalist</option>
+                                        <option value="Boho Bohemian">Boho / Bohemian</option>
+                                        <option value="Y2K Retro">Y2K / Retro</option>
+                                        <option value="Vintage">Vintage</option>
+                                        <option value="Cyberpunk Futuristic">Cyberpunk / Futuristic</option>
+                                        <option value="Avant-Garde">Avant-Garde</option>
+                                    </optgroup>
+                                    <optgroup label="Photography & Lighting">
+                                        <option value="Cinematic">Cinematic</option>
+                                        <option value="Studio Lighting">Studio Lighting</option>
+                                        <option value="Golden Hour">Golden Hour</option>
+                                        <option value="Neon Night Life">Neon / Night Life</option>
+                                        <option value="Black and White Noir">Black & White / Noir</option>
+                                        <option value="Polaroid Film Grain">Polaroid / Film Grain</option>
+                                        <option value="Soft Pastel">Soft / Pastel</option>
+                                    </optgroup>
+                                    <optgroup label="Product Focus">
+                                        <option value="Flat Lay">Flat Lay</option>
+                                        <option value="Macro Detail">Macro / Detail</option>
+                                    </optgroup>
+                                </select>
+                            </div>
 
-                        <div class="toggle-container">
-                            <span class="toggle-label">Speed</span>
-                            <label class="switch">
-                                <input type="checkbox" id="model-toggle-img">
-                                <span class="slider round"></span>
-                            </label>
-                            <span class="toggle-label">Quality</span>
+                            <div class="input-group">
+                                <label>Reference Assets</label>
+                                <div class="reference-buttons">
+                                    <button id="btn-open-style" class="secondary-btn full-width">
+                                        <i class="fa-solid fa-palette"></i> Style Reference
+                                        <span id="badge-style" class="badge-count" hidden>0</span>
+                                    </button>
+                                    <button id="btn-open-product" class="secondary-btn full-width">
+                                        <i class="fa-solid fa-shirt"></i> Product Reference
+                                        <span id="badge-product" class="badge-count" hidden>0</span>
+                                    </button>
+                                    <button id="btn-open-scene" class="secondary-btn full-width">
+                                        <i class="fa-solid fa-image"></i> Scene Reference
+                                        <span id="badge-scene" class="badge-count" hidden>0</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="toggle-container">
+                                <span class="toggle-label">Speed</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="model-toggle-img">
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="toggle-label">Quality</span>
+                            </div>
+
+                            <button id="btn-generate-img" class="primary-btn">
+                                <i class="fa-solid fa-bolt"></i> Generate
+                            </button>
+                            <button id="btn-reset-img" class="secondary-btn full-width"
+                                style="justify-content: center;">
+                                <i class="fa-solid fa-eraser"></i> Clear
+                            </button>
                         </div>
-                        <button id="btn-generate-img" class="primary-btn">
-                            <i class="fa-solid fa-bolt"></i> Generate
-                        </button>
-                        <button id="btn-reset-img" class="secondary-btn full-width"
-                            style="justify-content: center; margin-top: 0.5rem;">
-                            <i class="fa-solid fa-eraser"></i> Clear
-                        </button>
                     </div>
-                    <div class="preview-area glass-panel">
-                        <div id="img-result-container" class="empty-state">
-                            <i class="fa-regular fa-image"></i>
-                            <p>Generated image will appear here</p>
-                        </div>
+                </div>
+
+                <!-- Output Section -->
+                <div class="preview-area glass-panel full-width" style="min-height: 400px;">
+                    <div id="img-result-container" class="empty-state">
+                        <i class="fa-regular fa-image"></i>
+                        <p>Generated image will appear here</p>
                     </div>
                 </div>
             </section>
@@ -240,93 +261,113 @@
                         </div>
                     </div>
                 </div>
-                <div class="workspace split-view">
-                    <div class="controls glass-panel">
-                        <div class="input-group">
-                            <label>Upload Image to Edit</label>
-                            <div class="file-upload" id="edit-upload-area">
-                                <i class="fa-solid fa-cloud-arrow-up"></i>
-                                <span>Drop image or click to upload</span>
-                                <input type="file" id="edit-file-input" accept="image/*" hidden>
-                            </div>
-                            <div id="edit-preview-container" style="margin-top: 10px;"></div>
-                        </div>
-
-                        <div class="input-group">
-                            <label>Style</label>
-                            <select id="edit-style">
-                                <option value="">No specific style</option>
-                                <optgroup label="Fashion & Aesthetic">
-                                    <option value="Editorial High Fashion">Editorial / High Fashion</option>
-                                    <option value="Luxury Glamour">Luxury / Glamour</option>
-                                    <option value="Street Style">Street Style</option>
-                                    <option value="Minimalist">Minimalist</option>
-                                    <option value="Boho Bohemian">Boho / Bohemian</option>
-                                    <option value="Y2K Retro">Y2K / Retro</option>
-                                    <option value="Vintage">Vintage</option>
-                                    <option value="Cyberpunk Futuristic">Cyberpunk / Futuristic</option>
-                                    <option value="Avant-Garde">Avant-Garde</option>
-                                </optgroup>
-                                <optgroup label="Photography & Lighting">
-                                    <option value="Cinematic">Cinematic</option>
-                                    <option value="Studio Lighting">Studio Lighting</option>
-                                    <option value="Golden Hour">Golden Hour</option>
-                                    <option value="Neon Night Life">Neon / Night Life</option>
-                                    <option value="Black and White Noir">Black & White / Noir</option>
-                                    <option value="Polaroid Film Grain">Polaroid / Film Grain</option>
-                                    <option value="Soft Pastel">Soft / Pastel</option>
-                                </optgroup>
-                                <optgroup label="Product Focus">
-                                    <option value="Flat Lay">Flat Lay</option>
-                                    <option value="Macro Detail">Macro / Detail</option>
-                                </optgroup>
-                            </select>
-                        </div>
-
-                        <div class="input-group">
-                            <label>Reference Images (Optional)</label>
-                            <div class="file-upload" id="edit-ref-upload-area" style="padding: 1rem;">
-                                <i class="fa-solid fa-images"></i>
-                                <span>Add reference images</span>
-                                <input type="file" id="edit-ref-file-input" accept="image/*" multiple hidden>
-                            </div>
-                            <div id="edit-ref-preview-list" class="preview-list"
-                                style="margin-top: 10px; display: flex; gap: 5px; flex-wrap: wrap;"></div>
-                        </div>
-
-                        <div class="input-group">
+                <div class="glass-panel full-width" style="margin-bottom: 1rem;">
+                    <div class="creation-controls-grid">
+                        <!-- Left Column: Prompt -->
+                        <div class="input-group"
+                            style="display: flex; flex-direction: column; height: 100%; gap: 2rem;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <label>Edit Instruction</label>
+                                <label>User Instruction</label>
                                 <button id="btn-optimize-edit" class="icon-btn" title="Enhance with Gemini"
                                     style="font-size: 0.9rem; color: var(--accent-color);">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i> Enhance
                                 </button>
                             </div>
-                            <textarea id="edit-prompt"
-                                placeholder="Describe how you want to change the image (e.g., 'Make it sunny', 'Change background to blue')..."></textarea>
+                            <textarea id="edit-prompt" class="large-prompt"
+                                placeholder="Describe how you want to change the image (e.g., 'Make it sunny', 'Change background to blue')..."
+                                style="flex: 1; min-height: 150px; width: 100%;"></textarea>
+
+                            <div style="flex: 1; display: flex; flex-direction: column; margin-bottom: 1rem;">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                    <label>Context <span id="edit-context-version"
+                                            style="font-size: 0.8rem; color: var(--accent-color); margin-left: 0.5rem;"></span></label>
+                                </div>
+                                <textarea id="edit-context" class="large-prompt"
+                                    placeholder="Applied context will appear here..." readonly
+                                    style="flex: 1; min-height: 100px; width: 100%; font-size: 0.9rem; opacity: 0.8;"></textarea>
+                            </div>
                         </div>
 
-                        <div class="toggle-container">
-                            <span class="toggle-label">Speed</span>
-                            <label class="switch">
-                                <input type="checkbox" id="model-toggle-edit-page">
-                                <span class="slider round"></span>
-                            </label>
-                            <span class="toggle-label">Quality</span>
+                        <!-- Right Column: Options -->
+                        <div class="creation-options">
+                            <div class="input-group">
+                                <label>Upload Image to Edit</label>
+                                <div class="file-upload" id="edit-upload-area" style="padding: 10px;">
+                                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.2rem;"></i>
+                                    <span style="font-size: 0.8rem;">Drop image or click</span>
+                                    <input type="file" id="edit-file-input" accept="image/*" hidden>
+                                </div>
+                                <div id="edit-preview-container" style="margin-top: 5px;"></div>
+                            </div>
+
+                            <div class="input-group">
+                                <label>Style</label>
+                                <select id="edit-style">
+                                    <option value="">No specific style</option>
+                                    <optgroup label="Fashion & Aesthetic">
+                                        <option value="Editorial High Fashion">Editorial / High Fashion</option>
+                                        <option value="Luxury Glamour">Luxury / Glamour</option>
+                                        <option value="Street Style">Street Style</option>
+                                        <option value="Minimalist">Minimalist</option>
+                                        <option value="Boho Bohemian">Boho / Bohemian</option>
+                                        <option value="Y2K Retro">Y2K / Retro</option>
+                                        <option value="Vintage">Vintage</option>
+                                        <option value="Cyberpunk Futuristic">Cyberpunk / Futuristic</option>
+                                        <option value="Avant-Garde">Avant-Garde</option>
+                                    </optgroup>
+                                    <optgroup label="Photography & Lighting">
+                                        <option value="Cinematic">Cinematic</option>
+                                        <option value="Studio Lighting">Studio Lighting</option>
+                                        <option value="Golden Hour">Golden Hour</option>
+                                        <option value="Neon Night Life">Neon / Night Life</option>
+                                        <option value="Black and White Noir">Black & White / Noir</option>
+                                        <option value="Polaroid Film Grain">Polaroid / Film Grain</option>
+                                        <option value="Soft Pastel">Soft / Pastel</option>
+                                    </optgroup>
+                                    <optgroup label="Product Focus">
+                                        <option value="Flat Lay">Flat Lay</option>
+                                        <option value="Macro Detail">Macro / Detail</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+
+                            <div class="input-group">
+                                <label>Reference Images (Optional)</label>
+                                <div class="file-upload" id="edit-ref-upload-area" style="padding: 10px;">
+                                    <i class="fa-solid fa-images" style="font-size: 1.2rem;"></i>
+                                    <span style="font-size: 0.8rem;">Add reference images</span>
+                                    <input type="file" id="edit-ref-file-input" accept="image/*" multiple hidden>
+                                </div>
+                                <div id="edit-ref-preview-list" class="preview-list"
+                                    style="margin-top: 5px; display: flex; gap: 5px; flex-wrap: wrap;"></div>
+                            </div>
+
+                            <div class="toggle-container">
+                                <span class="toggle-label">Speed</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="model-toggle-edit-page">
+                                    <span class="slider round"></span>
+                                </label>
+                                <span class="toggle-label">Quality</span>
+                            </div>
+
+                            <button id="btn-generate-edit-page" class="primary-btn">
+                                <i class="fa-solid fa-wand-magic"></i> Generate
+                            </button>
+                            <button id="btn-reset-edit-page" class="secondary-btn full-width"
+                                style="justify-content: center;">
+                                <i class="fa-solid fa-eraser"></i> Clear
+                            </button>
                         </div>
-                        <button id="btn-generate-edit-page" class="primary-btn" style="margin-top: auto;">
-                            <i class="fa-solid fa-wand-magic"></i> Generate
-                        </button>
-                        <button id="btn-reset-edit-page" class="secondary-btn full-width"
-                            style="justify-content: center; margin-top: 0.5rem;">
-                            <i class="fa-solid fa-eraser"></i> Clear
-                        </button>
                     </div>
-                    <div class="preview-area glass-panel">
-                        <div id="edit-result-container" class="empty-state">
-                            <i class="fa-regular fa-image"></i>
-                            <p>Edited image will appear here</p>
-                        </div>
+                </div>
+
+                <!-- Output Section -->
+                <div class="preview-area glass-panel full-width" style="min-height: 400px;">
+                    <div id="edit-result-container" class="empty-state">
+                        <i class="fa-regular fa-image"></i>
+                        <p>Edited image will appear here</p>
                     </div>
                 </div>
             </section>

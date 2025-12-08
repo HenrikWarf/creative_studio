@@ -830,6 +830,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // loadContextVersions is now defined earlier with delete logic
     async function loadContextVersions(projectId, currentProject = null) {
+        const versionList = document.getElementById('version-list');
         if (!versionList) return;
         versionList.innerHTML = '<p class="text-center"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</p>';
 
@@ -926,7 +927,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         fields.forEach(key => {
-            const elementId = key === 'context' ? 'ctx-overall' : `ctx - ${key.replace('_', '-')} `;
+            const elementId = key === 'context' ? 'ctx-overall' : `ctx-${key.replace('_', '-')}`;
             const el = document.getElementById(elementId);
             if (el) el.value = version[key] || '';
         });
@@ -940,7 +941,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!confirm('Are you sure you want to delete this version?')) return;
 
         try {
-            const res = await fetch(`/ context / versions / ${versionId} `, {
+            const res = await fetch(`/context/versions/${versionId}`, {
                 method: 'DELETE'
             });
 
@@ -1060,6 +1061,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnGenerateImg = document.getElementById('btn-generate-img');
     const btnResetImg = document.getElementById('btn-reset-img');
     const imgPrompt = document.getElementById('img-prompt');
+    const imgContext = document.getElementById('img-context');
     const imgStyle = document.getElementById('img-style');
 
     // Inputs
@@ -1186,6 +1188,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editFileInput = document.getElementById('edit-file-input');
     const editPreviewContainer = document.getElementById('edit-preview-container');
     const editPrompt = document.getElementById('edit-prompt');
+    const editContext = document.getElementById('edit-context');
     const btnGenerateEditPage = document.getElementById('btn-generate-edit-page');
     const btnResetEditPage = document.getElementById('btn-reset-edit-page');
     const editResultContainer = document.getElementById('edit-result-container');
@@ -1291,7 +1294,12 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const formData = new FormData();
                 formData.append('image', currentEditImageFile);
-                formData.append('instruction', editPrompt.value);
+
+                const editContext = document.getElementById('edit-context');
+                const contextVal = editContext ? editContext.value : '';
+                const fullInstruction = contextVal ? `${editPrompt.value}\n\nContext:\n${contextVal}` : editPrompt.value;
+
+                formData.append('instruction', fullInstruction);
 
                 // Model Selection
                 const modelToggle = document.getElementById('model-toggle-edit-page');
@@ -1306,7 +1314,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (response.ok) {
                     // data.image_data is base64
-                    const newImageSrc = `data: image / png; base64, ${data.image_data} `;
+                    const newImageSrc = `data:image/png;base64,${data.image_data}`;
 
                     // Display result
                     editResultContainer.innerHTML = `
@@ -1442,7 +1450,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
 
                 if (response.ok) {
-                    const newImageSrc = `data: image / png; base64, ${data.image_data} `;
+                    const newImageSrc = `data:image/png;base64,${data.image_data}`;
                     currentEditImageSrc = newImageSrc;
                     editMainImg.src = newImageSrc;
                     editHistory.unshift(newImageSrc); // Add to top
@@ -1518,21 +1526,77 @@ document.addEventListener('DOMContentLoaded', () => {
             const isQuality = modelToggle && modelToggle.checked;
             payload.model_type = isQuality ? 'Quality' : 'Speed';
 
-            // Capture Prompt
+            // Capture Prompt and Context
             let prompt = '';
+            let contextData = '';
             const btnSaveEdit = document.getElementById('btn-save-edit');
 
             if (btnElement === btnSaveEdit) {
                 // Saving from Edit Modal
-                const editInstruction = document.getElementById('edit-instruction');
-                prompt = editInstruction ? editInstruction.value : '';
-                if (!prompt) prompt = "Edited Image"; // Fallback
-            } else {
-                // Saving from Image Creation (default)
+                const editInstruction = document.getElementById('edit-instruction'); // Note: This ID might need checking if I renamed it? 
+                // I renamed the label, but the ID `edit-prompt` is used in HTML. 
+                // Wait, the edit modal uses `edit-instruction`? 
+                // Let's check the Edit Modal HTML.
+                // The Image Magic section uses `edit-prompt`.
+                // The "Edit Image" modal (from Project page) might use something else.
+                // I should check `openEditModal`.
+
+                // Assuming Image Magic uses `edit-prompt` and `edit-context`.
+                // If `btnElement` is from Image Magic result (which calls saveImageToProject directly),
+                // we need to distinguish.
+
+                // Actually, `saveImageToProject` is used by "Image Creation" result buttons.
+                // "Image Magic" result buttons also use it?
+                // Let's check `btnGenerateEditPage` listener.
+
+                // For now, let's handle the Image Creation case (default).
                 const imgPrompt = document.getElementById('img-prompt');
+                const imgContext = document.getElementById('img-context');
                 prompt = imgPrompt ? imgPrompt.value : '';
+                contextData = imgContext ? imgContext.value : '';
+            } else {
+                // Saving from Image Creation (default) or Image Magic (if not distinguished)
+                // We need to know which section we are in.
+                // But `saveImageToProject` is global.
+                // If we are in Image Magic, we should read `edit-prompt` and `edit-context`.
+                // If we are in Image Creation, `img-prompt` and `img-context`.
+
+                // How to distinguish?
+                // Maybe check which section is visible? Or pass a type?
+                // The `saveImageToProject` signature is `(imageSrc, btnElement)`.
+                // The `payload.type` is hardcoded to 'image'.
+
+                // Let's check if we can infer from `btnElement` parent?
+                // Or just check which inputs have values?
+                // Or maybe pass a source?
+
+                // For now, I will check if `img-prompt` is visible or has value?
+                // Actually, the user might have both filled.
+
+                // Let's look at `btnGenerateImg` listener. It generates HTML with `onclick="saveImageToProject..."`.
+                // I can update that onclick to pass 'creation' or 'magic'.
+
+                // But first, let's update `saveImageToProject` to accept a source or try to guess.
+                // I'll try to read both and see which one makes sense, or prioritize based on visibility.
+                // But `section.active-section` determines visibility.
+
+                const creationSection = document.getElementById('image-creation-section');
+                const magicSection = document.getElementById('image-magic-section');
+
+                if (magicSection && magicSection.classList.contains('active-section')) {
+                    const editPrompt = document.getElementById('edit-prompt');
+                    const editContext = document.getElementById('edit-context');
+                    prompt = editPrompt ? editPrompt.value : '';
+                    contextData = editContext ? editContext.value : '';
+                } else {
+                    const imgPrompt = document.getElementById('img-prompt');
+                    const imgContext = document.getElementById('img-context');
+                    prompt = imgPrompt ? imgPrompt.value : '';
+                    contextData = imgContext ? imgContext.value : '';
+                }
             }
             payload.prompt = prompt;
+            payload.context_data = contextData;
 
             // Context Version
             // We need to know which context version was used. 
@@ -1600,6 +1664,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const prompt = imgPrompt.value;
+            const context = imgContext.value;
             const style = imgStyle.value;
 
             if (!prompt) {
@@ -1610,7 +1675,9 @@ document.addEventListener('DOMContentLoaded', () => {
             setLoading(btnGenerateImg, true);
 
             const formData = new FormData();
-            formData.append('prompt', prompt);
+            // Combine prompt and context for generation
+            const fullPrompt = context ? `${prompt}\n\nContext:\n${context}` : prompt;
+            formData.append('prompt', fullPrompt);
             if (style) formData.append('style', style);
 
             // Append all file types
@@ -2238,11 +2305,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function setupContextAccordion(btnId, contentId, checkboxesId, applyBtnId, targetInputId) {
+    function setupContextAccordion(btnId, contentId, checkboxesId, applyBtnId, contextOutputId, versionLabelId) {
         const btn = document.getElementById(btnId);
         const content = document.getElementById(contentId);
         const applyBtn = document.getElementById(applyBtnId);
-        const targetInput = document.getElementById(targetInputId);
+        const contextOutput = document.getElementById(contextOutputId);
+        const versionLabel = document.getElementById(versionLabelId);
 
         if (btn && content) {
             btn.addEventListener('click', () => {
@@ -2265,7 +2333,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        if (applyBtn && targetInput) {
+        if (applyBtn && contextOutput) {
             applyBtn.addEventListener('click', () => {
                 const checkboxes = document.querySelectorAll(`#${checkboxesId} input[type="checkbox"]:checked`);
                 if (checkboxes.length === 0) {
@@ -2275,12 +2343,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 let contextText = '';
                 checkboxes.forEach(cb => {
-                    contextText += `${cb.dataset.label}: ${cb.value}.`;
+                    contextText += `${cb.dataset.label}: ${cb.value}.\n`;
                 });
 
-                // Append to input
-                const currentVal = targetInput.value;
-                targetInput.value = currentVal ? currentVal + ' ' + contextText : contextText;
+                // Set context output
+                contextOutput.value = contextText.trim();
+
+                // Update version label if present
+                if (versionLabel) {
+                    versionLabel.innerText = "(Applied)";
+                }
 
                 // Visual feedback
                 const originalText = applyBtn.innerText;
@@ -2293,8 +2365,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initialize Context Accordions
-    setupContextAccordion('btn-context-accordion-img', 'context-content-img', 'context-checkboxes-img', 'btn-apply-context-img', 'img-prompt');
-    setupContextAccordion('btn-context-accordion-edit', 'context-content-edit', 'context-checkboxes-edit', 'btn-apply-context-edit', 'edit-prompt');
+    setupContextAccordion('btn-context-accordion-img', 'context-content-img', 'context-checkboxes-img', 'btn-apply-context-img', 'img-context', 'img-context-version');
+    setupContextAccordion('btn-context-accordion-edit', 'context-content-edit', 'context-checkboxes-edit', 'btn-apply-context-edit', 'edit-context', 'edit-context-version');
 
     // --- Context Engineering Page Logic ---
     // --- Context Engineering Page Logic ---
@@ -2782,7 +2854,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             setLoading(btnUpdateProjectContext, true);
             try {
-                const res = await fetch(`/ projects / ${currentProjectId} `, {
+                const res = await fetch(`/projects/${currentProjectId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -2875,7 +2947,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             setLoading(btnEditVersionDetails, true);
             try {
-                const res = await fetch(`/ context / version / ${currentVersionId} `);
+                const res = await fetch(`/context/version/${currentVersionId}`);
                 if (res.ok) {
                     const version = await res.json();
                     document.getElementById('save-version-name').value = version.name;

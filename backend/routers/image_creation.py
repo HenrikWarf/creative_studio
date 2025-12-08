@@ -91,6 +91,7 @@ class SaveRequest(BaseModel):
     prompt: Optional[str] = ""
     model_type: Optional[str] = None
     context_version: Optional[str] = None
+    context_data: Optional[str] = None
 
 @router.post("/save")
 async def save(
@@ -121,7 +122,8 @@ async def save(
             request.prompt, 
             db,
             model_type=request.model_type,
-            context_version=request.context_version
+            context_version=request.context_version,
+            context_data=request.context_data
         )
         
         # Generate signed URL
