@@ -37,3 +37,31 @@ class Asset(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     project = relationship("Project", back_populates="assets")
+
+class ContextVersion(Base):
+    __tablename__ = "context_versions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"))
+    name = Column(String)
+    description = Column(String, nullable=True)
+    
+    # Context Data
+    brand_vibe = Column(String, nullable=True)
+    brand_lighting = Column(String, nullable=True)
+    brand_colors = Column(String, nullable=True)
+    brand_subject = Column(String, nullable=True)
+    
+    project_vibe = Column(String, nullable=True)
+    project_lighting = Column(String, nullable=True)
+    project_colors = Column(String, nullable=True)
+    project_subject = Column(String, nullable=True)
+    
+    context = Column(Text, nullable=True) # Overall context
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    project = relationship("Project", back_populates="context_versions")
+
+# Update Project relationship
+Project.context_versions = relationship("ContextVersion", back_populates="project")

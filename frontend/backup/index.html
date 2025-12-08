@@ -34,7 +34,7 @@
                     <i class="fa-solid fa-folder"></i>
                     <span>Projects</span>
                 </li>
-                <li data-target="context-engineering">
+                <li onclick="window.location.href='context.html'">
                     <i class="fa-solid fa-layer-group"></i>
                     <span>Context Engineering</span>
                 </li>
@@ -99,9 +99,7 @@
                 </header>
                 <div class="glass-panel full-width" style="margin-bottom: 1rem; padding: 0;">
                     <button class="accordion-header" id="btn-context-accordion-img">
-                        <span><i class="fa-solid fa-layer-group"></i> Context Engineering <small class="text-muted"
-                                style="font-size: 0.8em; margin-left: 10px;">(Need to apply the context to make use of
-                                created context)</small></span>
+                        <span><i class="fa-solid fa-layer-group"></i> Context Engineering</span>
                         <i class="fa-solid fa-chevron-down"></i>
                     </button>
                     <div class="accordion-content" id="context-content-img" hidden>
@@ -132,14 +130,7 @@
                             <textarea id="img-prompt" placeholder="Describe your vision..."></textarea>
                         </div>
                         <div class="input-group">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <label>Style</label>
-                                <button id="btn-optimize-img-style" class="icon-btn enhance-field-btn"
-                                    title="Enhance with Gemini" data-target-field="img-style"
-                                    style="font-size: 0.9rem; color: var(--accent-color);">
-                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Enhance
-                                </button>
-                            </div>
+                            <label>Style</label>
                             <select id="img-style">
                                 <option value="">No specific style</option>
                                 <optgroup label="Fashion & Aesthetic">
@@ -220,9 +211,7 @@
                 </header>
                 <div class="glass-panel full-width" style="margin-bottom: 1rem; padding: 0;">
                     <button class="accordion-header" id="btn-context-accordion-edit">
-                        <span><i class="fa-solid fa-layer-group"></i> Context Engineering <small class="text-muted"
-                                style="font-size: 0.8em; margin-left: 10px;">(Need to apply the context to make use of
-                                created context)</small></span>
+                        <span><i class="fa-solid fa-layer-group"></i> Context Engineering</span>
                         <i class="fa-solid fa-chevron-down"></i>
                     </button>
                     <div class="accordion-content" id="context-content-edit" hidden>
@@ -419,325 +408,6 @@
                     </div>
                 </div>
 
-            </section>
-
-            <!-- Project Details View -->
-            <section id="project-details-view">
-                <div class="workspace">
-                    <div class="glass-panel full-width" style="width: 100%;">
-                        <button id="btn-back-projects" class="icon-btn" style="margin-bottom: 1rem;">
-                            <i class="fa-solid fa-arrow-left"></i> Back to Projects
-                        </button>
-                        <div id="project-details">
-                            <!-- Injected by script.js -->
-                            <div style="text-align: center; padding: 2rem;">
-                                <i class="fa-solid fa-spinner fa-spin"></i> Loading project details...
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Context Engineering Section -->
-            <section id="context-engineering">
-                <header
-                    style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <h1>Context Engineering</h1>
-                        <p>Generate, analyze, and refine project context with AI</p>
-                    </div>
-                    <div style="width: 300px; text-align: right;">
-                        <span class="text-muted">Current Project:</span>
-                        <h3 id="ctx-current-project-name" style="color: var(--accent-color);">Loading...</h3>
-                    </div>
-                </header>
-
-                <!-- Blocked Overlay -->
-                <div id="ctx-blocked-overlay" class="glass-panel"
-                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);"
-                    hidden>
-                    <i class="fa-solid fa-lock"
-                        style="font-size: 4rem; color: var(--text-secondary); margin-bottom: 1rem;"></i>
-                    <h2>No Project Selected</h2>
-                    <p class="text-muted" style="margin-bottom: 2rem;">Please select a project from the Projects page to
-                        use
-                        Context Engineering.</p>
-                    <button class="primary-btn"
-                        onclick="document.querySelector('li[data-target=\'projects\']').click()">
-                        <i class="fa-solid fa-folder"></i> Go to Projects
-                    </button>
-                </div>
-
-                <div class="context-container">
-                    <!-- Left Panel: Tools & History -->
-                    <div class="context-sidebar">
-                        <!-- Generation Tools -->
-                        <div class="glass-panel">
-                            <h3><i class="fa-solid fa-robot"></i> AI Generation</h3>
-                            <div class="tab-buttons" style="margin-top: 1rem;">
-                                <button class="tab-btn active" onclick="switchTab('goal')">From Goal</button>
-                                <button class="tab-btn" onclick="switchTab('brand')">Brand Analysis</button>
-                                <button class="tab-btn" onclick="switchTab('file')">From File</button>
-                            </div>
-
-                            <!-- Goal Tab -->
-                            <div id="tab-goal">
-                                <div class="input-group">
-                                    <label>Project Goal</label>
-                                    <textarea id="input-goal"
-                                        placeholder="e.g. Create a summer campaign for a luxury sneaker brand targeting Gen Z..."
-                                        style="height: 100px;"></textarea>
-                                    <small class="text-muted" style="display: block; margin-top: 5px;">(Generates
-                                        Project Specifics and Overall Context)</small>
-                                </div>
-                                <button id="btn-generate-context" class="primary-btn full-width"
-                                    style="margin-top: 1rem;">
-                                    <i class="fa-solid fa-bolt"></i> Generate Context
-                                </button>
-                            </div>
-
-                            <!-- Brand Tab -->
-                            <div id="tab-brand" hidden>
-                                <div class="input-group">
-                                    <label>Brand Name</label>
-                                    <input type="text" id="input-brand-name" placeholder="e.g. Nike, Gucci, Apple">
-                                    <small class="text-muted" style="display: block; margin-top: 5px;">(Generates Brand
-                                        Specifics)</small>
-                                </div>
-                                <button id="btn-analyze-brand" class="primary-btn full-width" style="margin-top: 1rem;">
-                                    <i class="fa-brands fa-google"></i> Analyze Brand
-                                </button>
-                            </div>
-
-                            <!-- File Tab -->
-                            <div id="tab-file" hidden>
-                                <div class="input-group">
-                                    <label>Upload File (Image, PDF, Text)</label>
-                                    <div class="file-upload" id="ctx-file-upload-area"
-                                        onclick="document.getElementById('ctx-file-input').click()">
-                                        <i class="fa-solid fa-cloud-arrow-up"></i>
-                                        <span>Click to upload</span>
-                                        <input type="file" id="ctx-file-input" hidden accept="image/*,.pdf,.txt">
-                                    </div>
-                                    <div id="ctx-file-preview"
-                                        style="margin-top: 10px; font-size: 0.9rem; color: var(--accent-color);">
-                                    </div>
-                                </div>
-
-                                <div class="input-group" style="margin-top: 1rem;">
-                                    <label>Analysis Type</label>
-                                    <div style="display: flex; gap: 15px; margin-top: 5px;">
-                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                            <input type="radio" id="type-brand" name="analysis-type" value="brand"
-                                                checked>
-                                            <label for="type-brand" style="margin:0; cursor:pointer;">Brand
-                                                Core</label>
-                                        </div>
-                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                            <input type="radio" id="type-project" name="analysis-type" value="project">
-                                            <label for="type-project" style="margin:0; cursor:pointer;">Project
-                                                Specifics</label>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <button id="btn-analyze-file" class="primary-btn full-width" style="margin-top: 1rem;">
-                                    <i class="fa-solid fa-file-import"></i> Analyze File
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Version History -->
-                        <div class="glass-panel" style="flex: 1; display: flex; flex-direction: column;">
-                            <h3><i class="fa-solid fa-clock-rotate-left"></i> Version History</h3>
-                            <div id="version-list"
-                                style="margin-top: 1rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px;">
-                                <p class="text-muted text-center">Select a project to view history.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Right Panel: Editor & Preview -->
-                    <div class="context-main">
-                        <!-- Editor -->
-                        <div class="glass-panel">
-                            <div
-                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                                <div style="display: flex; gap: 10px;">
-                                    <button id="btn-update-project-context" class="primary-btn">
-                                        <i class="fa-solid fa-pen-to-square"></i> Add Context to Project
-                                    </button>
-                                    <button id="btn-update-version" class="primary-btn"
-                                        style="background-color: var(--accent-color);">
-                                        <i class="fa-solid fa-floppy-disk"></i> Save
-                                    </button>
-                                    <button id="btn-edit-version-details" class="secondary-btn"
-                                        title="Edit Name & Description">
-                                        <i class="fa-solid fa-pen"></i>
-                                    </button>
-                                    <button id="btn-save-version" class="secondary-btn">
-                                        <i class="fa-solid fa-plus"></i> Save New Version
-                                    </button>
-                                    <button id="btn-delete-version" class="delete-btn" style="margin-top: 0;" hidden>
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="metadata-columns">
-                                <!-- Brand Core -->
-                                <div class="metadata-section">
-                                    <h4>Brand Core</h4>
-                                    <div class="input-group">
-                                        <div
-                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <label style="margin-bottom: 0;">Vibe</label>
-                                            <button class="icon-btn small-btn enhance-field-btn"
-                                                data-target="ctx-brand-vibe" title="Enhance with AI"
-                                                style="font-size: 0.8rem; padding: 2px 5px; color: var(--accent-color);">
-                                                <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                            </button>
-                                        </div>
-                                        <textarea id="ctx-brand-vibe" rows="3"></textarea>
-                                    </div>
-                                    <div class="input-group">
-                                        <div
-                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <label style="margin-bottom: 0;">Lighting</label>
-                                            <button class="icon-btn small-btn enhance-field-btn"
-                                                data-target="ctx-brand-lighting" title="Enhance with AI"
-                                                style="font-size: 0.8rem; padding: 2px 5px; color: var(--accent-color);">
-                                                <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                            </button>
-                                        </div>
-                                        <textarea id="ctx-brand-lighting" rows="3"></textarea>
-                                    </div>
-                                    <div class="input-group">
-                                        <div
-                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <label style="margin-bottom: 0;">Colors</label>
-                                            <button class="icon-btn small-btn enhance-field-btn"
-                                                data-target="ctx-brand-colors" title="Enhance with AI"
-                                                style="font-size: 0.8rem; padding: 2px 5px; color: var(--accent-color);">
-                                                <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                            </button>
-                                        </div>
-                                        <textarea id="ctx-brand-colors" rows="3"></textarea>
-                                    </div>
-                                    <div class="input-group">
-                                        <div
-                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <label style="margin-bottom: 0;">Subject</label>
-                                            <button class="icon-btn small-btn enhance-field-btn"
-                                                data-target="ctx-brand-subject" title="Enhance with AI"
-                                                style="font-size: 0.8rem; padding: 2px 5px; color: var(--accent-color);">
-                                                <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                            </button>
-                                        </div>
-                                        <textarea id="ctx-brand-subject" rows="3"></textarea>
-                                    </div>
-                                </div>
-
-                                <!-- Project Specifics -->
-                                <div class="metadata-section">
-                                    <h4>Project Specifics</h4>
-                                    <div class="input-group">
-                                        <div
-                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <label style="margin-bottom: 0;">Vibe</label>
-                                            <button class="icon-btn small-btn enhance-field-btn"
-                                                data-target="ctx-project-vibe" title="Enhance with AI"
-                                                style="font-size: 0.8rem; padding: 2px 5px; color: var(--accent-color);">
-                                                <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                            </button>
-                                        </div>
-                                        <textarea id="ctx-project-vibe" rows="3"></textarea>
-                                    </div>
-                                    <div class="input-group">
-                                        <div
-                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <label style="margin-bottom: 0;">Lighting</label>
-                                            <button class="icon-btn small-btn enhance-field-btn"
-                                                data-target="ctx-project-lighting" title="Enhance with AI"
-                                                style="font-size: 0.8rem; padding: 2px 5px; color: var(--accent-color);">
-                                                <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                            </button>
-                                        </div>
-                                        <textarea id="ctx-project-lighting" rows="3"></textarea>
-                                    </div>
-                                    <div class="input-group">
-                                        <div
-                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <label style="margin-bottom: 0;">Colors</label>
-                                            <button class="icon-btn small-btn enhance-field-btn"
-                                                data-target="ctx-project-colors" title="Enhance with AI"
-                                                style="font-size: 0.8rem; padding: 2px 5px; color: var(--accent-color);">
-                                                <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                            </button>
-                                        </div>
-                                        <textarea id="ctx-project-colors" rows="3"></textarea>
-                                    </div>
-                                    <div class="input-group">
-                                        <div
-                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <label style="margin-bottom: 0;">Subject</label>
-                                            <button class="icon-btn small-btn enhance-field-btn"
-                                                data-target="ctx-project-subject" title="Enhance with AI"
-                                                style="font-size: 0.8rem; padding: 2px 5px; color: var(--accent-color);">
-                                                <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                            </button>
-                                        </div>
-                                        <textarea id="ctx-project-subject" rows="3"></textarea>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="input-group">
-                                <div
-                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                    <label style="margin-bottom: 0;">Overall Context /
-                                        Guidelines</label>
-                                    <div style="display: flex; gap: 5px;">
-                                        <button id="btn-synthesize-context" class="icon-btn small-btn"
-                                            title="Synthesize from other fields"
-                                            style="font-size: 0.8rem; padding: 2px 5px; color: var(--accent-color);">
-                                            <i class="fa-solid fa-layer-group"></i> Synthesize
-                                        </button>
-                                        <button class="icon-btn small-btn enhance-field-btn" data-target="ctx-overall"
-                                            title="Enhance with AI"
-                                            style="font-size: 0.8rem; padding: 2px 5px; color: var(--accent-color);">
-                                            <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <textarea id="ctx-overall" style="height: 120px;"></textarea>
-                            </div>
-                        </div>
-
-                        <!-- Prompt Preview -->
-                        <div class="glass-panel">
-                            <div
-                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h3 style="margin: 0;">Prompt Preview</h3>
-                                <div style="display: flex; gap: 8px;">
-                                    <button id="btn-get-insights" class="secondary-btn small-btn"
-                                        title="Get AI Insights">
-                                        <i class="fa-regular fa-lightbulb"></i> Insights
-                                    </button>
-                                    <button id="btn-copy-preview" class="secondary-btn small-btn"
-                                        title="Copy to Clipboard">
-                                        <i class="fa-regular fa-copy"></i> Copy
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="prompt-preview-container" class="preview-container">
-                                <p class="text-muted text-center" style="padding: 20px;">Start editing context fields to
-                                    see the preview.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </section>
         </main>
     </div>
@@ -1045,23 +715,6 @@
         </div>
     </div>
 
-    <!-- Save Version Modal -->
-    <div id="modal-save-version" class="modal" hidden>
-        <div class="modal-content glass-panel">
-            <span class="close-modal" id="close-modal-save">&times;</span>
-            <h2>Save Context Version</h2>
-            <div class="input-group">
-                <label>Version Name</label>
-                <input type="text" id="save-version-name" placeholder="e.g. Initial Draft, Summer Vibe V2">
-            </div>
-            <div class="input-group">
-                <label>Description (Optional)</label>
-                <textarea id="save-version-desc" style="height: 80px;"></textarea>
-            </div>
-            <button id="btn-confirm-save" class="primary-btn full-width">Save</button>
-        </div>
-    </div>
-
     <!-- Lightbox Modal -->
     <div id="lightbox-modal" class="lightbox" hidden>
         <span class="close-lightbox">&times;</span>
@@ -1073,56 +726,7 @@
         <button class="lightbox-nav next-btn"><i class="fa-solid fa-chevron-right"></i></button>
         <div class="lightbox-caption"></div>
     </div>
-    <!-- Enhance Field Modal -->
-    <div id="modal-enhance-field" class="modal" hidden>
-        <div class="modal-content glass-panel" style="width: 500px;">
-            <span class="close-modal" id="close-enhance-modal">&times;</span>
-            <h2>Enhance Text</h2>
-            <p class="text-muted" style="margin-bottom: 1rem;">Add instructions for the AI or leave empty for general
-                improvement.</p>
-            <div class="input-group">
-                <label>Instructions (Optional)</label>
-                <textarea id="enhance-instructions" rows="3"
-                    placeholder="e.g. Make it more professional, shorter, punchier..."></textarea>
-            </div>
-            <button id="btn-confirm-enhance" class="primary-btn full-width">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Enhance
-            </button>
-        </div>
-    </div>
     <script src="script.js"></script>
 </body>
 
 </html>
-<!-- Prompt Insights Modal -->
-<div id="modal-prompt-insights" class="modal" hidden>
-    <div class="modal-content large-modal">
-        <div class="modal-header">
-            <h2>Prompt Insights</h2>
-            <button id="close-modal-insights" class="close-btn">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div id="insights-initial-view" class="text-center" style="padding: 2rem;">
-                <i class="fa-solid fa-wand-magic-sparkles"
-                    style="font-size: 3rem; color: var(--accent-color); margin-bottom: 1rem;"></i>
-                <p class="insights-description">
-                    Gemini will analyze your prompt to provide creative insights, highlight key features, and suggest
-                    improvements.
-                </p>
-                <button id="btn-start-analysis" class="primary-btn">
-                    <i class="fa-solid fa-play"></i> Analyze Prompt
-                </button>
-            </div>
-
-            <div id="insights-loading-view" class="text-center" style="padding: 2rem;" hidden>
-                <i class="fa-solid fa-spinner fa-spin"
-                    style="font-size: 3rem; color: var(--accent-color); margin-bottom: 1rem;"></i>
-                <p class="text-muted">Analyzing your creative direction...</p>
-            </div>
-
-            <div id="insights-results-view" hidden>
-                <!-- Results will be injected here -->
-            </div>
-        </div>
-    </div>
-</div>

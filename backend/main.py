@@ -18,7 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from backend.routers import virtual_tryon, image_creation, video_creation, projects
+from backend.routers import virtual_tryon, image_creation, video_creation, projects, context
 from backend import models
 from backend.database import engine
 
@@ -30,6 +30,7 @@ app.include_router(video_creation.router)
 app.include_router(projects.router)
 from backend.routers import assets
 app.include_router(assets.router)
+app.include_router(context.router)
 
 # Serve frontend static files
 # Mount the frontend directory to serve static files

@@ -1,3 +1,8 @@
+/* Global Utilities */
+[hidden] {
+    display: none !important;
+}
+
 :root {
     --bg-color: #0f0f13;
     --sidebar-bg: #18181f;
@@ -22,13 +27,13 @@
 body {
     background-color: var(--bg-color);
     color: var(--text-primary);
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
+    /* overflow: hidden; Removed for page scroll */
 }
 
 .app-container {
     display: flex;
-    height: 100%;
+    min-height: 100vh;
 }
 
 /* Sidebar */
@@ -89,7 +94,7 @@ body {
 .content-area {
     flex: 1;
     padding: 2rem;
-    overflow-y: auto;
+    /* overflow-y: auto; Removed for page scroll */
     background: radial-gradient(circle at top right, #1e1e2e 0%, var(--bg-color) 40%);
 }
 
@@ -448,6 +453,28 @@ textarea {
     color: white;
 }
 
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.close-btn:hover {
+    color: white;
+}
+
 /* Project Details */
 .project-header {
     display: flex;
@@ -486,6 +513,8 @@ textarea {
 .metadata-section {
     /* margin-bottom removed as it's handled by columns gap or internal spacing */
     height: 100%;
+    min-width: 0;
+    /* Ensures grid columns don't expand beyond 1fr due to content */
 }
 
 .metadata-section h4 {
@@ -642,7 +671,7 @@ textarea {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
+    flex: 1;
     text-align: center;
     padding: 2rem;
     color: white;
@@ -1007,4 +1036,432 @@ input:checked+.slider:before {
 .accordion-content {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(0, 0, 0, 0.2);
+}
+
+/* Context Engineering Styles */
+.context-container {
+    display: flex;
+    gap: 2rem;
+    height: calc(100vh - 140px);
+    /* Adjust based on header */
+}
+
+.context-sidebar {
+    width: 350px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.context-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow-y: auto;
+}
+
+.tab-buttons {
+    display: flex;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.tab-btn.active {
+    background: var(--card-bg);
+    color: var(--text-primary);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.version-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.version-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-color);
+}
+
+.version-item.active {
+    background: rgba(124, 77, 255, 0.1);
+    border-color: var(--accent-color);
+}
+
+.version-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.version-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.version-date {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.version-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.context-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.context-column h3 {
+    color: var(--accent-color);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.context-field {
+    margin-bottom: 1rem;
+}
+
+.context-field label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.context-field input {
+    font-size: 0.9rem;
+    padding: 8px 12px;
+}
+
+/* Prompt Preview Area */
+.prompt-preview-container {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.prompt-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.prompt-preview-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+/* Context Page Specifics */
+.context-main .input-group {
+    margin-bottom: 1.5rem;
+}
+
+.context-main textarea {
+    min-height: 80px;
+    /* Ensure at least 3 rows visual height */
+    font-family: inherit;
+    line-height: 1.5;
+}
+
+/* Context Engineering Styles */
+.context-container {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.context-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.context-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.tab-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1rem;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tab-btn.active {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+}
+
+.version-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.version-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--accent-color);
+}
+
+.version-card.active {
+    border-color: var(--accent-color);
+    background: rgba(124, 77, 255, 0.1);
+}
+
+.version-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.version-date {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.text-muted {
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 0.85rem;
+}
+
+/* Prompt Preview Styles */
+.preview-container {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    /* max-height: 400px;  Removed to allow full expansion */
+    /* overflow-y: auto;   Removed to allow full expansion */
+    font-family: 'Courier New', Courier, monospace;
+    /* Code-like feel */
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+    /* Added spacing below */
+}
+
+.preview-section {
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 1rem;
+}
+
+.preview-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.preview-section-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 0.8rem;
+    letter-spacing: 1px;
+}
+
+.preview-item {
+    margin-bottom: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.preview-label {
+    color: var(--accent-color);
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.preview-value {
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    /* Preserve formatting */
+}
+
+/* Prompt Insights Styles */
+.insight-section {
+    margin-bottom: 2rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.insight-section h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    color: var(--accent-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.insight-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.insight-features-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.insight-features-list li {
+    margin-bottom: 0.5rem;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.insight-features-list li::before {
+    content: "•";
+    color: var(--accent-color);
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+}
+
+.insight-suggestion {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    border-left: 3px solid var(--accent-color);
+}
+
+.suggestion-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 0.5rem;
+}
+
+.suggestion-text {
+    font-weight: 500;
+    color: white;
+}
+
+.suggestion-impact {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-left: 24px;
+    /* Align with text */
+}
+
+@media (max-width: 768px) {
+    .insight-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Large Modal Fixes */
+.modal-content.large-modal {
+    width: 90%;
+    max-width: 1000px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    /* Remove default padding to handle scroll area */
+}
+
+.modal-content.large-modal .modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+    /* Prevent header from shrinking */
+}
+
+.modal-content.large-modal .modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    /* Enable scrolling for body content */
+    flex: 1;
+    /* Take remaining height */
+}
+
+/* Ensure grid items don't overflow */
+.insight-column {
+    min-width: 0;
+    /* Prevent flex/grid item overflow */
+}
+
+/* Modal Content Styling Fix */
+.modal-content {
+    background: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    padding: 1.5rem;
+    /* Ensure padding */
+}
+
+/* Utility Class for Text Alignment */
+.text-center {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+/* Insights Initial View Text */
+.insights-description {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    max-width: 400px; /* Compact width */
+    margin: 0 auto 2rem auto; /* Center and add bottom margin */
+    color: rgba(255, 255, 255, 0.7);
 }

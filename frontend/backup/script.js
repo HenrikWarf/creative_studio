@@ -11,20 +11,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentLightboxIndex = 0;
 
     // Check if we are on project.html
-    // Check for deep link to project
     const urlParams = new URLSearchParams(window.location.search);
     const projectIdParam = urlParams.get('id');
 
-    if (projectIdParam) {
+    if (projectIdParam && window.location.pathname.includes('project.html')) {
+        // We are on project details page
         openProject(projectIdParam);
     } else {
-        // Handle Hash Navigation
+        // We are on index.html (or similar)
+
+        // Handle Hash Navigation (if coming from project page)
         if (window.location.hash) {
             const targetId = window.location.hash.substring(1);
             activateSection(targetId);
-        } else {
-            // Default to home
-            activateSection('home');
         }
 
         navLinks.forEach(link => {
@@ -36,6 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function activateSection(targetId) {
+        // If element doesn't exist (e.g. on project.html clicking a link that should go to index), 
+        // the onclick in HTML handles the redirection. 
+        // This logic is for single-page nav within index.html
         const targetSection = document.getElementById(targetId);
         if (!targetSection) return;
 
@@ -49,69 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (targetId === 'projects') {
             loadProjects();
-        } else if (targetId === 'context-engineering') {
-            initContextEngineering();
         }
     }
-
-    function initContextEngineering() {
-        const overlay = document.getElementById('ctx-blocked-overlay');
-        const projectNameHeader = document.getElementById('ctx-current-project-name');
-
-        if (!currentProjectId) {
-            if (overlay) overlay.hidden = false;
-            if (projectNameHeader) projectNameHeader.textContent = 'No Project Selected';
-            return;
-        }
-
-        if (overlay) overlay.hidden = true;
-
-        // Find current project name
-        const project = projects.find(p => p.id === currentProjectId);
-        if (projectNameHeader) projectNameHeader.textContent = project ? project.name : 'Unknown Project';
-
-        // Populate editor with current project data
-        if (project) {
-            const fields = [
-                'brand_vibe', 'brand_lighting', 'brand_colors', 'brand_subject',
-                'project_vibe', 'project_lighting', 'project_colors', 'project_subject',
-                'context'
-            ];
-
-            fields.forEach(key => {
-                const elementId = key === 'context' ? 'ctx-overall' : `ctx-${key.replace('_', '-')}`;
-                const el = document.getElementById(elementId);
-                if (el) el.value = project[key] || '';
-            });
-
-            // Update preview if function exists
-            if (typeof updatePromptPreview === 'function') {
-                updatePromptPreview();
-            }
-        }
-
-        // Load versions
-        loadContextVersions(currentProjectId, project);
-    }
-
-    // Expose switchTab globally
-    window.switchTab = function (tabName) {
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('[id^="tab-"]').forEach(tab => tab.hidden = true);
-
-        // Find button that triggered this (event.target might be icon inside button)
-        // Since we can't easily get the button element from here without passing it, 
-        // let's just find the button that calls this function with this arg
-        // Or better, just use the event if available, but window.event is deprecated.
-        // Let's just select by onclick attribute for simplicity or assume the user clicked the right one.
-        // Actually, we can just select the button by text or order.
-        // Simplest:
-        const btn = document.querySelector(`button[onclick="switchTab('${tabName}')"]`);
-        if (btn) btn.classList.add('active');
-
-        const tab = document.getElementById(`tab-${tabName}`);
-        if (tab) tab.hidden = false;
-    };
     // Home Page Button
     const btnGoProjects = document.getElementById('btn-go-projects');
     if (btnGoProjects) {
@@ -429,20 +370,22 @@ document.addEventListener('DOMContentLoaded', () => {
     async function openProject(projectId) {
         // Ensure we have the currentProjectId loaded from storage if not already set
         if (!currentProjectId) {
-            currentProjectId = parseInt(projectId);
-            localStorage.setItem('currentProjectId', currentProjectId);
+            const savedId = localStorage.getItem('currentProjectId');
+            if (savedId) currentProjectId = parseInt(savedId);
         }
 
-        // Switch to project details view
-        activateSection('project-details-view');
+        // If we are on index.html, redirect to project.html
+        if (!window.location.pathname.includes('project.html')) {
+            window.location.href = `project.html?id=${projectId}`;
+            return;
+        }
 
-        // Fetch details
+        // If we are already on project.html (or called from init), fetch details
         try {
             const response = await fetch(`/projects/${projectId}`);
             if (response.ok) {
                 const project = await response.json();
                 showProjectDetails(project);
-                updateSidebarProject(project);
             }
         } catch (error) {
             console.error('Error fetching project details:', error);
@@ -679,7 +622,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnBackProjects) {
         btnBackProjects.addEventListener('click', () => {
-            activateSection('projects');
+            // These elements might not exist if we are on project.html but the button is there?
+            // Actually btnBackProjects is on project.html.
+            // But projectListView and btnCreateProject are NOT on project.html.
+            // So this logic needs to be adjusted for project.html or index.html.
+
+            // If on project.html, back button should just go to index.html
+            if (window.location.pathname.includes('project.html')) {
+                window.location.href = 'index.html#projects';
+                return;
+            }
+
+            // If on index.html (old logic, but we removed the view), this code shouldn't run or exist.
+            // But let's keep it safe.
+            if (projectDetailsView) projectDetailsView.hidden = true;
+            if (projectListView) projectListView.hidden = false;
+            if (btnCreateProject) btnCreateProject.hidden = false;
+            loadProjects();
         });
     }
 
@@ -789,7 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
         versionList.innerHTML = '<p class="text-center"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</p>';
 
         try {
-            const res = await fetch(`/context/versions/${projectId}?t=${new Date().getTime()}`);
+            const res = await fetch(`/context/versions/${projectId}`);
             if (!res.ok) throw new Error('Failed to load versions');
             const versions = await res.json();
 
@@ -813,18 +772,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         'context'
                     ];
                     isCurrent = fields.every(field => {
-                        const vVal = (v[field] || '').trim();
-                        const pVal = (currentProject[field] || '').trim();
+                        const vVal = v[field] || '';
+                        const pVal = currentProject[field] || '';
                         return vVal === pVal;
                     });
                 }
 
-                if (isCurrent && !currentVersionId) {
-                    currentVersionId = v.id; // Set global current version ID if it matches and no selection exists
-                }
-
-                const isActive = v.id === currentVersionId;
-                item.className = `version-item ${isActive ? 'active' : ''}`;
+                item.className = `version-item ${isSelected ? 'active' : ''} ${isCurrent ? 'current-project-version' : ''}`;
                 item.onclick = (e) => {
                     // Prevent triggering if delete button clicked
                     if (e.target.closest('.delete-version-btn')) return;
@@ -2164,21 +2118,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Fetch project details to get name and initial data
             try {
-                // Always fetch fresh project data to ensure context is up-to-date
-                const res = await fetch(`/projects/${currentProjectId}?t=${new Date().getTime()}`);
+                // We might need to fetch all projects if 'projects' global isn't populated yet
+                if (projects.length === 0) {
+                    const res = await fetch('/projects/');
+                    if (res.ok) projects = await res.json();
+                }
 
-                if (res.ok) {
-                    const project = await res.json();
+                const project = projects.find(p => p.id === currentProjectId);
 
-                    // Update global projects list if it exists
-                    if (typeof projects !== 'undefined') {
-                        const idx = projects.findIndex(p => p.id === project.id);
-                        if (idx !== -1) projects[idx] = project;
-                        else projects.push(project);
-                    } else {
-                        projects = [project];
-                    }
-
+                if (project) {
                     // Project found
                     ctxCurrentProjectName.textContent = project.name;
                     ctxBlockedOverlay.hidden = true;
@@ -2192,6 +2140,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     // Project ID in local storage but not found in DB
                     console.warn('Project ID found in storage but not in project list:', currentProjectId);
+                    // Don't clear immediately, maybe fetch failed? 
+                    // But if we fetched successfully and it's not there, it's gone.
                     handleNoProject();
                 }
             } catch (error) {
@@ -2241,7 +2191,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    populateContextFields(data, ['project_vibe', 'project_lighting', 'project_colors', 'project_subject', 'context']);
+                    populateContextFields(data);
                     updatePromptPreview();
                 } else {
                     showAlert('Generation failed.');
@@ -2269,7 +2219,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    populateContextFields(data, ['brand_vibe', 'brand_lighting', 'brand_colors', 'brand_subject']);
+                    populateContextFields(data);
                     updatePromptPreview();
                 } else {
                     showAlert('Analysis failed.');
@@ -2283,161 +2233,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- From File Logic ---
-    const ctxFileInput = document.getElementById('ctx-file-input');
-    const ctxFileUploadArea = document.getElementById('ctx-file-upload-area');
-    const ctxFilePreview = document.getElementById('ctx-file-preview');
-    const btnAnalyzeFile = document.getElementById('btn-analyze-file');
-    let ctxSelectedFile = null;
-
-    if (ctxFileInput && ctxFileUploadArea) {
-        ctxFileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                ctxSelectedFile = file;
-                ctxFilePreview.textContent = `Selected: ${file.name}`;
-                ctxFileUploadArea.querySelector('span').textContent = 'Change file';
-            }
-        });
-    }
-
-    if (btnAnalyzeFile) {
-        btnAnalyzeFile.addEventListener('click', async () => {
-            if (!ctxSelectedFile) return showAlert('Please select a file first.');
-
-            const analysisType = document.querySelector('input[name="analysis-type"]:checked').value;
-
-            setLoading(btnAnalyzeFile, true);
-            try {
-                const formData = new FormData();
-                formData.append('file', ctxSelectedFile);
-                formData.append('analysis_type', analysisType);
-
-                const res = await fetch('/context/analyze-file', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-
-                    let targetFields = [];
-                    if (analysisType === 'brand') {
-                        targetFields = ['brand_vibe', 'brand_lighting', 'brand_colors', 'brand_subject'];
-                    } else {
-                        targetFields = ['project_vibe', 'project_lighting', 'project_colors', 'project_subject', 'context'];
-                    }
-
-                    populateContextFields(data, targetFields);
-                    updatePromptPreview();
-                    showAlert('File analysis complete!');
-                } else {
-                    const err = await res.json();
-                    showAlert('Analysis failed: ' + (err.detail || 'Unknown error'));
-                }
-            } catch (error) {
-                console.error(error);
-                showAlert('Error analyzing file.');
-            } finally {
-                setLoading(btnAnalyzeFile, false);
-            }
-        });
-    }
-
-    // --- Field Enhancement Logic ---
-    const enhanceButtons = document.querySelectorAll('.enhance-field-btn');
-    const modalEnhance = document.getElementById('modal-enhance-field');
-    const btnConfirmEnhance = document.getElementById('btn-confirm-enhance');
-    const closeEnhanceModal = document.getElementById('close-enhance-modal');
-    let currentEnhanceTargetId = null;
-
-    enhanceButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            currentEnhanceTargetId = btn.dataset.target;
-            document.getElementById('enhance-instructions').value = ''; // Clear previous instructions
-            if (modalEnhance) modalEnhance.hidden = false;
-        });
-    });
-
-    if (closeEnhanceModal) {
-        closeEnhanceModal.addEventListener('click', () => {
-            if (modalEnhance) modalEnhance.hidden = true;
-            currentEnhanceTargetId = null;
-        });
-    }
-
-    // Close modal on outside click
-    window.addEventListener('click', (event) => {
-        if (event.target === modalEnhance) {
-            modalEnhance.hidden = true;
-            currentEnhanceTargetId = null;
-        }
-    });
-
-    if (btnConfirmEnhance) {
-        btnConfirmEnhance.addEventListener('click', async () => {
-            if (!currentEnhanceTargetId) return;
-
-            const targetField = document.getElementById(currentEnhanceTargetId);
-            if (!targetField) return;
-
-            const instructions = document.getElementById('enhance-instructions').value;
-            const currentValue = targetField.value;
-
-            // Derive field name from ID (e.g., ctx-brand-vibe -> Brand Vibe)
-            let fieldName = currentEnhanceTargetId.replace('ctx-', '').replace(/-/g, ' ');
-            fieldName = fieldName.replace(/\b\w/g, l => l.toUpperCase());
-
-            setLoading(btnConfirmEnhance, true);
-
-            try {
-                const res = await fetch('/context/enhance-field', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        current_value: currentValue,
-                        field_name: fieldName,
-                        instructions: instructions
-                    })
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    targetField.value = data.enhanced_text;
-                    if (typeof updatePromptPreview === 'function') {
-                        updatePromptPreview();
-                    }
-                    if (modalEnhance) modalEnhance.hidden = true;
-                    showAlert('Field enhanced!');
-                } else {
-                    const err = await res.json();
-                    showAlert('Enhancement failed: ' + (err.detail || 'Unknown error'));
-                }
-            } catch (error) {
-                console.error(error);
-                showAlert('Error enhancing field.');
-            } finally {
-                setLoading(btnConfirmEnhance, false);
-            }
-        });
-    }
-
-    function populateContextFields(data, targetFields = null) {
-        const allFields = [
+    function populateContextFields(data) {
+        const fields = [
             'brand_vibe', 'brand_lighting', 'brand_colors', 'brand_subject',
             'project_vibe', 'project_lighting', 'project_colors', 'project_subject',
             'context' // maps to ctx-overall
         ];
 
-        const fieldsToUpdate = targetFields || allFields;
-
-        fieldsToUpdate.forEach(key => {
+        fields.forEach(key => {
             const elementId = key === 'context' ? 'ctx-overall' : `ctx-${key.replace('_', '-')}`;
             const el = document.getElementById(elementId);
-            if (el && data[key] !== undefined) {
-                el.value = data[key];
-            }
+            if (el) el.value = data[key] || '';
         });
         updatePromptPreview();
     }
@@ -2445,7 +2251,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function clearContextFields() {
         const inputs = document.querySelectorAll('[id^="ctx-"]');
         inputs.forEach(input => input.value = '');
-        updatePromptPreview(); // Update the HTML preview
+        document.getElementById('prompt-preview').value = '';
     }
 
     // Update preview when inputs change
@@ -2455,150 +2261,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function updatePromptPreview() {
-        const container = document.getElementById('prompt-preview-container');
-        if (!container) return;
+        const preview = document.getElementById('prompt-preview');
+        if (!preview) return;
 
-        const brandFields = [
-            { id: 'ctx-brand-vibe', label: 'Brand Vibe' },
-            { id: 'ctx-brand-lighting', label: 'Brand Lighting' },
-            { id: 'ctx-brand-colors', label: 'Brand Colors' },
-            { id: 'ctx-brand-subject', label: 'Brand Subject' }
-        ];
-
-        const projectFields = [
-            { id: 'ctx-project-vibe', label: 'Project Vibe' },
-            { id: 'ctx-project-lighting', label: 'Project Lighting' },
-            { id: 'ctx-project-colors', label: 'Project Colors' },
-            { id: 'ctx-project-subject', label: 'Project Subject' }
-        ];
-
-        const overallField = { id: 'ctx-overall', label: 'Overall Context' };
-
-        let html = '';
-        let hasContent = false;
-
-        // Helper to generate section HTML
-        const generateSection = (title, fields) => {
-            let sectionHtml = '';
-            let hasSectionContent = false;
-
-            fields.forEach(field => {
-                const el = document.getElementById(field.id);
-                if (el && el.value.trim()) {
-                    hasSectionContent = true;
-                    sectionHtml += `
-                        <div class="preview-item">
-                            <span class="preview-label">${field.label}</span>
-                            <span class="preview-value">${el.value.trim()}</span>
-                        </div>
-                    `;
+        let text = '';
+        contextInputs.forEach(input => {
+            if (input.value) {
+                // Get label from previous sibling or parent logic if needed, 
+                // but here we can infer from ID or just use a standard format.
+                // Let's use a mapping or just the value for now to keep it simple, 
+                // OR better: use the label text associated with the input.
+                const label = input.previousElementSibling ? input.previousElementSibling.innerText : '';
+                if (label) {
+                    text += `${label}: ${input.value}. `;
                 }
-            });
-
-            if (hasSectionContent) {
-                hasContent = true;
-                return `
-                    <div class="preview-section">
-                        <div class="preview-section-title">${title}</div>
-                        ${sectionHtml}
-                    </div>
-                `;
-            }
-            return '';
-        };
-
-        html += generateSection('Brand Core', brandFields);
-        html += generateSection('Project Specifics', projectFields);
-        html += generateSection('Overall Context', [overallField]);
-
-        if (!hasContent) {
-            container.innerHTML = '<p class="text-muted text-center" style="padding: 20px;">Start editing context fields to see the preview.</p>';
-        } else {
-            container.innerHTML = html;
-        }
-    }
-
-    // Copy Preview Logic
-    const btnCopyPreview = document.getElementById('btn-copy-preview');
-    if (btnCopyPreview) {
-        btnCopyPreview.addEventListener('click', () => {
-            const contextInputs = document.querySelectorAll('[id^="ctx-"]');
-            const fieldLabels = {
-                'ctx-brand-vibe': 'Brand Vibe',
-                'ctx-brand-lighting': 'Brand Lighting',
-                'ctx-brand-colors': 'Brand Colors',
-                'ctx-brand-subject': 'Brand Subject',
-                'ctx-project-vibe': 'Project Vibe',
-                'ctx-project-lighting': 'Project Lighting',
-                'ctx-project-colors': 'Project Colors',
-                'ctx-project-subject': 'Project Subject',
-                'ctx-overall': 'Overall Context'
-            };
-
-            let text = '';
-            contextInputs.forEach(input => {
-                if (input.value && fieldLabels[input.id]) {
-                    text += `${fieldLabels[input.id]}: ${input.value}.\n\n`;
-                }
-            });
-
-            if (!text) {
-                showAlert('Nothing to copy!');
-                return;
-            }
-
-            navigator.clipboard.writeText(text).then(() => {
-                const originalHtml = btnCopyPreview.innerHTML;
-                btnCopyPreview.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
-                setTimeout(() => {
-                    btnCopyPreview.innerHTML = originalHtml;
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy:', err);
-                showAlert('Failed to copy to clipboard');
-            });
-        });
-    }
-
-    // --- Synthesize Context Logic ---
-    const btnSynthesizeContext = document.getElementById('btn-synthesize-context');
-    if (btnSynthesizeContext) {
-        btnSynthesizeContext.addEventListener('click', async () => {
-            setLoading(btnSynthesizeContext, true);
-            try {
-                const payload = {
-                    brand_vibe: document.getElementById('ctx-brand-vibe').value,
-                    brand_lighting: document.getElementById('ctx-brand-lighting').value,
-                    brand_colors: document.getElementById('ctx-brand-colors').value,
-                    brand_subject: document.getElementById('ctx-brand-subject').value,
-                    project_vibe: document.getElementById('ctx-project-vibe').value,
-                    project_lighting: document.getElementById('ctx-project-lighting').value,
-                    project_colors: document.getElementById('ctx-project-colors').value,
-                    project_subject: document.getElementById('ctx-project-subject').value
-                };
-
-                const res = await fetch('/context/synthesize', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    document.getElementById('ctx-overall').value = data.synthesized_text;
-                    updatePromptPreview();
-                    showAlert('Context synthesized!');
-                } else {
-                    const err = await res.json();
-                    showAlert('Synthesis failed: ' + (err.detail || 'Unknown error'));
-                }
-            } catch (error) {
-                console.error(error);
-                showAlert('Error synthesizing context.');
-            } finally {
-                setLoading(btnSynthesizeContext, false);
             }
         });
+        preview.value = text;
     }
 
     // Update Project Context
@@ -2640,8 +2319,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (index !== -1) {
                         projects[index] = updatedProject;
                     }
-                    // Reload versions to sync "Current" label
-                    loadContextVersions(currentProjectId, updatedProject);
+                    // Reload to sync "Current" label
+                    window.location.reload();
                 } else {
                     showAlert('Failed to update project context.');
                 }
@@ -2654,99 +2333,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Update Current Version
-    // Update Current Version
-    const btnUpdateVersion = document.getElementById('btn-update-version');
-    if (btnUpdateVersion) {
-        btnUpdateVersion.addEventListener('click', async () => {
-            if (!currentProjectId) return showAlert('Please select a project first.');
-            if (!currentVersionId) {
-                // If no version is selected, prompt to save as new
-                if (confirm('No version selected. Would you like to save as a new version?')) {
-                    isEditingVersion = false;
-                    document.getElementById('save-version-name').value = '';
-                    document.getElementById('save-version-desc').value = '';
-                    document.querySelector('#modal-save-version h2').innerText = 'Save New Version';
-                    modalSaveVersion.hidden = false;
-                }
-                return;
-            }
-
-            const payload = {
-                // name: Removed to prevent overwriting with default/empty
-                brand_vibe: document.getElementById('ctx-brand-vibe').value,
-                brand_lighting: document.getElementById('ctx-brand-lighting').value,
-                brand_colors: document.getElementById('ctx-brand-colors').value,
-                brand_subject: document.getElementById('ctx-brand-subject').value,
-                project_vibe: document.getElementById('ctx-project-vibe').value,
-                project_lighting: document.getElementById('ctx-project-lighting').value,
-                project_colors: document.getElementById('ctx-project-colors').value,
-                project_subject: document.getElementById('ctx-project-subject').value,
-                context: document.getElementById('ctx-overall').value
-            };
-
-            setLoading(btnUpdateVersion, true);
-            try {
-                const res = await fetch(`/context/versions/${currentVersionId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (res.ok) {
-                    showAlert('Version updated successfully!');
-                    loadContextVersions(currentProjectId); // Reload list to reflect any changes
-                } else {
-                    const err = await res.json();
-                    showAlert('Failed to update version: ' + (err.detail || 'Unknown error'));
-                }
-            } catch (error) {
-                console.error(error);
-                showAlert('Error updating version.');
-            } finally {
-                setLoading(btnUpdateVersion, false);
-            }
-        });
-    }
-
     // Saving Versions
-    let isEditingVersion = false;
-    const btnEditVersionDetails = document.getElementById('btn-edit-version-details');
-
-    if (btnEditVersionDetails) {
-        btnEditVersionDetails.addEventListener('click', async () => {
-            if (!currentVersionId) return showAlert('Please select a version to edit.');
-
-            setLoading(btnEditVersionDetails, true);
-            try {
-                const res = await fetch(`/context/version/${currentVersionId}`);
-                if (res.ok) {
-                    const version = await res.json();
-                    document.getElementById('save-version-name').value = version.name;
-                    document.getElementById('save-version-desc').value = version.description || '';
-
-                    isEditingVersion = true;
-                    document.querySelector('#modal-save-version h2').innerText = 'Edit Version Details';
-                    modalSaveVersion.hidden = false;
-                } else {
-                    showAlert('Failed to load version details.');
-                }
-            } catch (error) {
-                console.error(error);
-                showAlert('Error loading version details.');
-            } finally {
-                setLoading(btnEditVersionDetails, false);
-            }
-        });
-    }
-
     if (btnSaveVersion) {
         btnSaveVersion.addEventListener('click', () => {
             if (!currentProjectId) return showAlert('Please select a project first.');
-            isEditingVersion = false;
-            document.getElementById('save-version-name').value = '';
-            document.getElementById('save-version-desc').value = '';
-            document.querySelector('#modal-save-version h2').innerText = 'Save New Version';
             modalSaveVersion.hidden = false;
         });
     }
@@ -2762,47 +2352,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!name) return showAlert('Please enter a version name.');
 
+            const payload = {
+                project_id: currentProjectId,
+                name: name,
+                description: desc,
+                brand_vibe: document.getElementById('ctx-brand-vibe').value,
+                brand_lighting: document.getElementById('ctx-brand-lighting').value,
+                brand_colors: document.getElementById('ctx-brand-colors').value,
+                brand_subject: document.getElementById('ctx-brand-subject').value,
+                project_vibe: document.getElementById('ctx-project-vibe').value,
+                project_lighting: document.getElementById('ctx-project-lighting').value,
+                project_colors: document.getElementById('ctx-project-colors').value,
+                project_subject: document.getElementById('ctx-project-subject').value,
+                context: document.getElementById('ctx-overall').value
+            };
+
             setLoading(btnConfirmSave, true);
             try {
-                let res;
-                if (isEditingVersion) {
-                    // Update existing version metadata (name/desc only)
-                    res = await fetch(`/context/versions/${currentVersionId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name, description: desc })
-                    });
-                } else {
-                    // Create new version
-                    const payload = {
-                        project_id: currentProjectId,
-                        name: name,
-                        description: desc,
-                        brand_vibe: document.getElementById('ctx-brand-vibe').value,
-                        brand_lighting: document.getElementById('ctx-brand-lighting').value,
-                        brand_colors: document.getElementById('ctx-brand-colors').value,
-                        brand_subject: document.getElementById('ctx-brand-subject').value,
-                        project_vibe: document.getElementById('ctx-project-vibe').value,
-                        project_lighting: document.getElementById('ctx-project-lighting').value,
-                        project_colors: document.getElementById('ctx-project-colors').value,
-                        project_subject: document.getElementById('ctx-project-subject').value,
-                        context: document.getElementById('ctx-overall').value
-                    };
-
-                    res = await fetch('/context/versions', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                }
+                const res = await fetch('/context/versions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
                 if (res.ok) {
-                    showAlert(isEditingVersion ? 'Version details updated!' : 'Version saved successfully!');
+                    showAlert('Version saved successfully!');
                     modalSaveVersion.hidden = true;
                     loadContextVersions(currentProjectId);
                 } else {
-                    const err = await res.json();
-                    showAlert('Failed: ' + (err.detail || 'Unknown error'));
+                    showAlert('Failed to save version.');
                 }
             } catch (error) {
                 console.error(error);
@@ -2814,144 +2392,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // --- Prompt Insights Logic ---
-    const btnGetInsights = document.getElementById('btn-get-insights');
-    const modalInsights = document.getElementById('modal-prompt-insights');
-    const closeModalInsights = document.getElementById('close-modal-insights');
-    const btnStartAnalysis = document.getElementById('btn-start-analysis');
-    const viewInitial = document.getElementById('insights-initial-view');
-    const viewLoading = document.getElementById('insights-loading-view');
-    const viewResults = document.getElementById('insights-results-view');
-
-    if (btnGetInsights && modalInsights) {
-        btnGetInsights.addEventListener('click', () => {
-            // Reset view
-            viewInitial.hidden = false;
-            viewLoading.hidden = true;
-            viewResults.hidden = true;
-            modalInsights.hidden = false;
-        });
-
-        if (closeModalInsights) {
-            closeModalInsights.addEventListener('click', () => {
-                modalInsights.hidden = true;
-            });
-        }
-
-        if (btnStartAnalysis) {
-            btnStartAnalysis.addEventListener('click', async () => {
-                // Get current prompt text
-                const promptPreview = document.getElementById('prompt-preview-container');
-                let promptText = '';
-
-                // Extract text from the structured preview or construct it
-                const contextInputs = document.querySelectorAll('[id^="ctx-"]');
-                const fieldLabels = {
-                    'ctx-brand-vibe': 'Brand Vibe',
-                    'ctx-brand-lighting': 'Brand Lighting',
-                    'ctx-brand-colors': 'Brand Colors',
-                    'ctx-brand-subject': 'Brand Subject',
-                    'ctx-project-vibe': 'Project Vibe',
-                    'ctx-project-lighting': 'Project Lighting',
-                    'ctx-project-colors': 'Project Colors',
-                    'ctx-project-subject': 'Project Subject',
-                    'ctx-overall': 'Overall Context'
-                };
-
-                contextInputs.forEach(input => {
-                    if (input.value && fieldLabels[input.id]) {
-                        promptText += `${fieldLabels[input.id]}: ${input.value}.\n`;
-                    }
-                });
-
-                if (!promptText.trim()) {
-                    showAlert('Please add some context details first.');
-                    return;
-                }
-
-                // Switch to loading
-                viewInitial.hidden = true;
-                viewLoading.hidden = false;
-
-                try {
-                    const res = await fetch('/context/insight', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt_text: promptText })
-                    });
-
-                    if (res.ok) {
-                        const data = await res.json();
-                        renderInsights(data);
-                        viewLoading.hidden = true;
-                        viewResults.hidden = false;
-                    } else {
-                        const err = await res.json();
-                        showAlert('Analysis failed: ' + (err.detail || 'Unknown error'));
-                        viewLoading.hidden = true;
-                        viewInitial.hidden = false;
-                    }
-                } catch (error) {
-                    console.error(error);
-                    showAlert('Error analyzing prompt.');
-                    viewLoading.hidden = true;
-                    viewInitial.hidden = false;
-                }
-            });
-        }
-    }
-
-    function renderInsights(data) {
-        if (!viewResults) return;
-
-        let suggestionsHtml = '';
-        if (data.suggestions && data.suggestions.length > 0) {
-            suggestionsHtml = data.suggestions.map(s => `
-                <div class="insight-suggestion">
-                    <div class="suggestion-header">
-                        <i class="fa-solid fa-arrow-right" style="color: var(--accent-color);"></i>
-                        <span class="suggestion-text">${s.suggestion}</span>
-                    </div>
-                    <div class="suggestion-impact">
-                        <strong>Impact:</strong> ${s.impact}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        let featuresHtml = '';
-        if (data.key_features && data.key_features.length > 0) {
-            featuresHtml = '<ul class="insight-features-list">' +
-                data.key_features.map(f => `<li>${f}</li>`).join('') +
-                '</ul>';
-        }
-
-        viewResults.innerHTML = `
-            <div class="insight-section">
-                <h3><i class="fa-solid fa-palette"></i> Creative Summary</h3>
-                <p>${data.creative_summary}</p>
-            </div>
-
-            <div class="insight-grid">
-                <div class="insight-column">
-                    <div class="insight-section">
-                        <h3><i class="fa-solid fa-star"></i> Key Features</h3>
-                        ${featuresHtml}
-                    </div>
-                </div>
-                <div class="insight-column">
-                    <div class="insight-section">
-                        <h3><i class="fa-solid fa-glasses"></i> Style Explanation</h3>
-                        <p>${data.style_explanation}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="insight-section">
-                <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Suggestions for Improvement</h3>
-                ${suggestionsHtml}
-            </div>
-        `;
-    }
 
 });
