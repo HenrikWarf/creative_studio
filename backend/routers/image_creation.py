@@ -89,6 +89,8 @@ class SaveRequest(BaseModel):
     image_url: Optional[str] = None # URL to download
     project_id: int
     prompt: Optional[str] = ""
+    model_type: Optional[str] = None
+    context_version: Optional[str] = None
 
 @router.post("/save")
 async def save(
@@ -113,7 +115,14 @@ async def save(
         if not image_b64:
              raise HTTPException(status_code=400, detail="Either image_data or image_url must be provided")
 
-        blob_name = await save_image_asset(image_b64, request.project_id, request.prompt, db)
+        blob_name = await save_image_asset(
+            image_b64, 
+            request.project_id, 
+            request.prompt, 
+            db,
+            model_type=request.model_type,
+            context_version=request.context_version
+        )
         
         # Generate signed URL
         from backend.services.storage import generate_signed_url

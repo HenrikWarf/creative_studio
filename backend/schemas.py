@@ -6,6 +6,8 @@ class AssetBase(BaseModel):
     type: str
     url: str
     prompt: Optional[str] = None
+    model_type: Optional[str] = None
+    context_version: Optional[str] = None
 
 class AssetCreate(AssetBase):
     pass

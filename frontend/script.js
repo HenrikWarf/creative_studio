@@ -10,6 +10,33 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentProjectAssets = []; // Store assets for lightbox
     let currentLightboxIndex = 0;
 
+    // Define globally to ensure availability
+    window.openAssetInfoModal = function (assetId) {
+        const asset = currentProjectAssets.find(a => a.id === assetId);
+        if (!asset) {
+            console.error('Asset not found:', assetId);
+            return;
+        }
+
+        const modal = document.getElementById('modal-asset-info');
+        if (!modal) {
+            console.error('Modal not found: modal-asset-info');
+            return;
+        }
+
+        const img = document.getElementById('info-asset-img');
+        const prompt = document.getElementById('info-prompt');
+        const modelType = document.getElementById('info-model-type');
+        const contextVersion = document.getElementById('info-context-version');
+
+        if (img) img.src = asset.url;
+        if (prompt) prompt.textContent = asset.prompt || 'No prompt saved.';
+        if (modelType) modelType.textContent = asset.model_type || 'Unknown';
+        if (contextVersion) contextVersion.textContent = asset.context_version || 'Unknown';
+
+        modal.hidden = false;
+    };
+
     // Check if we are on project.html
     // Check for deep link to project
     const urlParams = new URLSearchParams(window.location.search);
@@ -633,11 +660,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="asset-info">
                     <span class="asset-type">${asset.type}</span>
                     <div style="display: flex; gap: 5px;">
-                        ${asset.type === 'image' ? `<button class="edit-btn small-btn" data-id="${asset.id}" title="Edit Image"><i class="fa-solid fa-wand-magic-sparkles"></i></button>` : ''}
+                        ${asset.type === 'image' ? `
+                            <button class="info-btn small-btn" data-id="${asset.id}" title="Asset Info"><i class="fa-solid fa-info"></i></button>
+                            <button class="edit-btn small-btn" data-id="${asset.id}" title="Edit Image"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                        ` : ''}
                         <button class="delete-btn small-delete-btn" data-id="${asset.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </div>
             `;
+
+            // Handle info click
+            const infoBtn = assetCard.querySelector('.info-btn');
+            if (infoBtn) {
+                infoBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (window.openAssetInfoModal) {
+                        window.openAssetInfoModal(asset.id);
+                    }
+                });
+            }
 
             // Handle delete click
             const deleteBtn = assetCard.querySelector('.delete-btn');
@@ -655,8 +696,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            // Handle lightbox click
-            assetCard.addEventListener('click', () => openLightbox(index));
+            // Handle lightbox click (only if not clicking buttons)
+            assetCard.addEventListener('click', (e) => {
+                if (!e.target.closest('button')) {
+                    openLightbox(index);
+                }
+            });
 
             // Append to appropriate container
             // Map backend types to container keys if needed. 
@@ -689,7 +734,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const response = await fetch(`/assets/${assetId}`, {
+            const response = await fetch(`/ assets / ${assetId} `, {
                 method: 'DELETE'
             });
 
@@ -821,6 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (isCurrent && !currentVersionId) {
                     currentVersionId = v.id; // Set global current version ID if it matches and no selection exists
+                    window.activeContextVersionName = v.name;
                 }
 
                 const isActive = v.id === currentVersionId;
@@ -835,7 +881,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const date = new Date(v.created_at).toLocaleString();
 
                 item.innerHTML = `
-                    <div class="version-header">
+                <div class="version-header">
                         <span class="version-name">
                             ${v.name}
                             ${isCurrent ? '<span class="badge" style="background: var(--accent-color); color: white; font-size: 0.7rem; margin-left: 8px;">Current</span>' : ''}
@@ -847,8 +893,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             </button>
                         </div>
                     </div>
-                    <div class="version-desc">${v.description || 'No description'}</div>
-                `;
+                <div class="version-desc">${v.description || 'No description'}</div>
+            `;
                 versionList.appendChild(item);
             });
         } catch (error) {
@@ -858,13 +904,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function loadVersionIntoEditor(version) {
         currentVersionId = version.id;
+        window.activeContextVersionName = version.name;
 
         // Update UI highlighting
         document.querySelectorAll('.version-item').forEach(item => item.classList.remove('active'));
         // Find the item that corresponds to this version and add active class
         // We can't easily find it without re-rendering or adding IDs to elements, 
         // but we can just re-render or iterate. Re-rendering is safest but slower.
-        // Let's iterate based on text content or just re-render the list to be clean.
         // Let's iterate based on text content or just re-render the list to be clean.
         const project = projects.find(p => p.id === currentProjectId);
         loadContextVersions(currentProjectId, project); // Re-render to update highlight
@@ -880,7 +926,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         fields.forEach(key => {
-            const elementId = key === 'context' ? 'ctx-overall' : `ctx-${key.replace('_', '-')}`;
+            const elementId = key === 'context' ? 'ctx-overall' : `ctx - ${key.replace('_', '-')} `;
             const el = document.getElementById(elementId);
             if (el) el.value = version[key] || '';
         });
@@ -894,7 +940,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!confirm('Are you sure you want to delete this version?')) return;
 
         try {
-            const res = await fetch(`/context/versions/${versionId}`, {
+            const res = await fetch(`/ context / versions / ${versionId} `, {
                 method: 'DELETE'
             });
 
@@ -974,7 +1020,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                const response = await fetch(`/projects/${currentProjectData.id}`, {
+                const response = await fetch(`/ projects / ${currentProjectData.id} `, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1260,29 +1306,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (response.ok) {
                     // data.image_data is base64
-                    const newImageSrc = `data:image/png;base64,${data.image_data}`;
+                    const newImageSrc = `data: image / png; base64, ${data.image_data} `;
 
                     // Display result
                     editResultContainer.innerHTML = `
-                        <img src="${newImageSrc}" alt="Edited Image" style="max-height: 60vh; object-fit: contain;">
-                        <div class="project-actions" style="justify-content: center; margin-top: 1rem; gap: 10px;">
-                             <button class="secondary-btn" onclick="openEditModal('${newImageSrc}')">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i> Edit
-                            </button>
-                             <button class="secondary-btn" onclick="saveImageToProject('${newImageSrc}', this)">
-                                <i class="fa-regular fa-floppy-disk"></i> Save to Project
-                            </button>
-                             <button class="secondary-btn" onclick="downloadImage('${newImageSrc}', 'edited_image.png')">
-                                <i class="fa-solid fa-download"></i> Download
-                            </button>
-                        </div>
-                    `;
+                <img src="${newImageSrc}" alt="Edited Image" style="max-height: 60vh; object-fit: contain;">
+                    <div class="project-actions" style="justify-content: center; margin-top: 1rem; gap: 10px;">
+                        <button class="secondary-btn" onclick="openEditModal('${newImageSrc}')">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Edit
+                        </button>
+                        <button class="secondary-btn" onclick="saveImageToProject('${newImageSrc}', this)">
+                            <i class="fa-regular fa-floppy-disk"></i> Save to Project
+                        </button>
+                        <button class="secondary-btn" onclick="downloadImage('${newImageSrc}', 'edited_image.png')">
+                            <i class="fa-solid fa-download"></i> Download
+                        </button>
+                    </div>
+            `;
                 } else {
                     showAlert('Error: ' + data.detail);
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showAlert('An error occurred during editing');
+                showAlert('An error occurred');
             } finally {
                 setLoading(btnGenerateEditPage, false);
             }
@@ -1396,7 +1442,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
 
                 if (response.ok) {
-                    const newImageSrc = `data:image/png;base64,${data.image_data}`;
+                    const newImageSrc = `data: image / png; base64, ${data.image_data} `;
                     currentEditImageSrc = newImageSrc;
                     editMainImg.src = newImageSrc;
                     editHistory.unshift(newImageSrc); // Add to top
@@ -1442,6 +1488,72 @@ document.addEventListener('DOMContentLoaded', () => {
                 project_id: currentProjectId,
                 type: 'image'
             };
+
+            // Capture Metadata
+            // Model Type
+            const modelToggle = document.getElementById('model-toggle-img');
+            // If toggle is checked (Speed), we might want to save "Speed". If unchecked (Quality), "Quality".
+            // Wait, let's check the toggle logic. 
+            // In generate: checked = gemini-3-pro-image-preview (Speed?), unchecked = gemini-2.5-flash-image (Quality?)
+            // The UI says "Speed" on left, "Quality" on right? Or toggle label?
+            // HTML: <span class="toggle-label">Speed</span> <input type="checkbox"> <span class="toggle-label">Quality</span>
+            // Usually checkbox unchecked = left, checked = right.
+            // So unchecked = Speed, checked = Quality? 
+            // Let's check CSS or assume standard.
+            // Actually, let's just save the model name or a friendly string.
+            // The user asked for "Speed or Quality".
+            // Let's look at how it's sent in generate:
+            // const modelName = modelToggle && modelToggle.checked ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
+            // If checked is Quality (assuming right side), then gemini-3-pro is Quality? 
+            // Actually, usually Flash is faster (Speed) and Pro is better (Quality).
+            // But let's check the HTML again.
+            // <span class="toggle-label">Speed</span> <switch> <span class="toggle-label">Quality</span>
+            // If unchecked, it's usually "off" or left. So Speed.
+            // If checked, it's "on" or right. So Quality.
+            // So unchecked = Speed = gemini-2.5-flash-image?
+            // In generate: checked ? 'gemini-3-pro...' : 'gemini-2.5-flash...'
+            // So checked = Quality = Gemini 3 Pro. Unchecked = Speed = Gemini 2.5 Flash.
+            // Correct.
+
+            const isQuality = modelToggle && modelToggle.checked;
+            payload.model_type = isQuality ? 'Quality' : 'Speed';
+
+            // Capture Prompt
+            let prompt = '';
+            const btnSaveEdit = document.getElementById('btn-save-edit');
+
+            if (btnElement === btnSaveEdit) {
+                // Saving from Edit Modal
+                const editInstruction = document.getElementById('edit-instruction');
+                prompt = editInstruction ? editInstruction.value : '';
+                if (!prompt) prompt = "Edited Image"; // Fallback
+            } else {
+                // Saving from Image Creation (default)
+                const imgPrompt = document.getElementById('img-prompt');
+                prompt = imgPrompt ? imgPrompt.value : '';
+            }
+            payload.prompt = prompt;
+
+            // Context Version
+            // We need to know which context version was used. 
+            // This is tricky because the user might have changed it.
+            // But usually we just take the currently active one if we are tracking it.
+            // In `initContextEngineering`, we load versions.
+            // We don't seem to have a global `currentContextVersionName` variable easily accessible 
+            // other than maybe what's selected in the UI or if we track it.
+            // Let's assume we want the name of the version if one is selected, or "Current Draft" if not.
+            // But the request is "What version of the Context was used".
+            // If we just generated it, it's whatever is in the text areas.
+            // If we loaded a version, we might know its name.
+            // Let's check if we store the loaded version name.
+            // In `loadContextVersions`, we might set something.
+            // For now, I'll default to "Custom/Draft" if not set.
+
+            if (window.activeContextVersionName) {
+                payload.context_version = window.activeContextVersionName;
+            } else {
+                payload.context_version = 'Custom / Draft';
+            }
 
             if (imageSrc.startsWith('http')) {
                 // It's a URL, send as image_url
@@ -1533,19 +1645,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Display result
                     // Display result
                     imgResultContainer.innerHTML = `
-                        <img src="${data.image_url}" alt="Generated Image" style="max-height: 60vh; object-fit: contain;">
-                        <div class="project-actions" style="justify-content: center; margin-top: 1rem; gap: 10px;">
-                             <button class="secondary-btn" onclick="openEditModal('${data.image_url}')">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i> Edit
-                            </button>
-                             <button class="secondary-btn" onclick="saveImageToProject('${data.image_url}', this)">
-                                <i class="fa-regular fa-floppy-disk"></i> Save to Project
-                            </button>
-                             <button class="secondary-btn" onclick="downloadImage('${data.image_url}', 'generated_image.png')">
-                                <i class="fa-solid fa-download"></i> Download
-                            </button>
-                        </div>
-                    `;
+                <img src="${data.image_url}" alt="Generated Image" style="max-height: 60vh; object-fit: contain;">
+                    <div class="project-actions" style="justify-content: center; margin-top: 1rem; gap: 10px;">
+                        <button class="secondary-btn" onclick="openEditModal('${data.image_url}')">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Edit
+                        </button>
+                        <button class="secondary-btn" onclick="saveImageToProject('${data.image_url}', this)">
+                            <i class="fa-regular fa-floppy-disk"></i> Save to Project
+                        </button>
+                        <button class="secondary-btn" onclick="downloadImage('${data.image_url}', 'generated_image.png')">
+                            <i class="fa-solid fa-download"></i> Download
+                        </button>
+                    </div>
+            `;
 
                 } else {
                     showAlert('Error: ' + data.detail);
@@ -1615,7 +1727,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Reset result
                 vtoResultContainer.innerHTML = `
-                    <div class="empty-state">
+                <div class="empty-state">
                         <i class="fa-solid fa-shirt"></i>
                         <p>Try-on result will appear here</p>
                     </div>
@@ -1736,19 +1848,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (response.ok) {
                     const url = await response.json();
                     vtoResultContainer.innerHTML = `
-                        <img src="${url}" alt="Try-on Result" style="cursor: pointer; max-height: 50vh; object-fit: contain;" onclick="openSimpleLightbox('${url}')">
-                        <div class="project-actions" style="justify-content: center; margin-top: 1rem; gap: 10px;">
-                             <button class="secondary-btn" onclick="openEditModal('${url}')">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i> Edit
-                            </button>
-                             <button class="secondary-btn" onclick="saveImageToProject('${url}', this)">
-                                <i class="fa-regular fa-floppy-disk"></i> Save to Project
-                            </button>
-                             <button class="secondary-btn" onclick="downloadImage('${url}', 'try-on-result.png')">
-                                <i class="fa-solid fa-download"></i> Download
-                            </button>
-                        </div>
-                    `;
+                <img src="${url}" alt="Try-on Result" style="cursor: pointer; max-height: 50vh; object-fit: contain;" onclick="openSimpleLightbox('${url}')">
+                <div class="project-actions" style="justify-content: center; margin-top: 1rem; gap: 10px;">
+                        <button class="secondary-btn" onclick="openEditModal('${url}')">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Edit
+                        </button>
+                        <button class="secondary-btn" onclick="saveImageToProject('${url}', this)">
+                            <i class="fa-regular fa-floppy-disk"></i> Save to Project
+                        </button>
+                        <button class="secondary-btn" onclick="downloadImage('${url}', 'try-on-result.png')">
+                            <i class="fa-solid fa-download"></i> Download
+                        </button>
+                    </div>
+            `;
                 } else {
                     const data = await response.json();
                     showAlert('Error: ' + data.detail);
@@ -1875,7 +1987,7 @@ document.addEventListener('DOMContentLoaded', () => {
             lightboxImg.src = asset.url;
         }
 
-        lightboxCaption.textContent = `${asset.type} - ${new Date(asset.created_at).toLocaleString()}`;
+        lightboxCaption.textContent = `${asset.type} - ${new Date(asset.created_at).toLocaleString()} `;
     }
 
     function nextSlide() {
@@ -1994,7 +2106,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     showAlert('Prompt enhanced successfully!');
                 } else {
                     const error = await response.json();
-                    showAlert(`Enhancement failed: ${error.detail}`);
+                    showAlert(`Enhancement failed: ${error.detail} `);
                 }
             } catch (error) {
                 console.error('Error enhancing prompt:', error);
@@ -2017,6 +2129,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Reset container style to allow custom internal layout
+        container.style.display = 'block';
+
         // Add Select/Clear All Buttons
         const controlsDiv = document.createElement('div');
         controlsDiv.style.marginBottom = '1rem';
@@ -2026,14 +2141,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnSelectAll = document.createElement('button');
         btnSelectAll.className = 'secondary-btn small-btn';
         btnSelectAll.innerText = 'Select All';
+        btnSelectAll.style.whiteSpace = 'nowrap';
+        btnSelectAll.style.width = 'auto';
         btnSelectAll.onclick = () => {
-            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]:not([disabled])');
             checkboxes.forEach(cb => cb.checked = true);
         };
 
         const btnClearAll = document.createElement('button');
         btnClearAll.className = 'secondary-btn small-btn';
         btnClearAll.innerText = 'Clear All';
+        btnClearAll.style.whiteSpace = 'nowrap';
+        btnClearAll.style.width = 'auto';
         btnClearAll.onclick = () => {
             const checkboxes = container.querySelectorAll('input[type="checkbox"]');
             checkboxes.forEach(cb => cb.checked = false);
@@ -2042,6 +2161,28 @@ document.addEventListener('DOMContentLoaded', () => {
         controlsDiv.appendChild(btnSelectAll);
         controlsDiv.appendChild(btnClearAll);
         container.appendChild(controlsDiv);
+
+        // Create 2-column layout wrapper
+        const columnsWrapper = document.createElement('div');
+        columnsWrapper.style.display = 'grid';
+        columnsWrapper.style.gridTemplateColumns = 'auto auto';
+        columnsWrapper.style.justifyContent = 'start';
+        columnsWrapper.style.gap = '40px';
+        columnsWrapper.style.marginBottom = '10px';
+
+        const leftCol = document.createElement('div');
+        leftCol.style.display = 'flex';
+        leftCol.style.flexDirection = 'column';
+        leftCol.style.gap = '10px';
+
+        const rightCol = document.createElement('div');
+        rightCol.style.display = 'flex';
+        rightCol.style.flexDirection = 'column';
+        rightCol.style.gap = '10px';
+
+        columnsWrapper.appendChild(leftCol);
+        columnsWrapper.appendChild(rightCol);
+        container.appendChild(columnsWrapper);
 
         const fields = [
             { key: 'brand_vibe', label: 'Brand Vibe' },
@@ -2059,20 +2200,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
         fields.forEach(field => {
             const value = project[field.key];
-            if (value) {
-                hasData = true;
-                const div = document.createElement('div');
-                div.className = 'checkbox-wrapper';
-                div.style.display = 'flex';
-                div.style.alignItems = 'center';
-                div.style.gap = '8px';
+            const hasValue = value && value.trim() !== '';
+            if (hasValue) hasData = true;
 
-                div.innerHTML = `
-                    <input type="checkbox" id="ctx-${containerId}-${field.key}" value="${value}" data-label="${field.label}" checked>
-                    <label for="ctx-${containerId}-${field.key}" style="font-size: 0.9rem; cursor: pointer;">
-                        <strong>${field.label}</strong>
-                    </label>
-                `;
+            const div = document.createElement('div');
+            div.className = 'checkbox-wrapper';
+            div.style.display = 'flex';
+            div.style.alignItems = 'center';
+            div.style.gap = '8px';
+
+            const disabledStyle = !hasValue ? 'text-decoration: line-through; opacity: 0.5; filter: blur(0.5px);' : '';
+            const disabledAttr = !hasValue ? 'disabled' : 'checked';
+            const cursorStyle = !hasValue ? 'not-allowed' : 'pointer';
+
+            div.innerHTML = `
+                <input type="checkbox" id="ctx-${containerId}-${field.key}" value="${hasValue ? value : ''}" data-label="${field.label}" ${disabledAttr}>
+                <label for="ctx-${containerId}-${field.key}" style="font-size: 0.9rem; cursor: ${cursorStyle}; ${disabledStyle}">
+                    <strong>${field.label}</strong>
+                    ${field.key === 'context' ? '<span class="text-muted" style="font-size: 0.8rem; margin-left: 5px; font-weight: normal;">(Select Overall Context ONLY for Token Optimized prompt)</span>' : ''}
+                </label>
+            `;
+
+            // Append to appropriate column or main container
+            if (field.key.startsWith('brand_')) {
+                leftCol.appendChild(div);
+            } else if (field.key.startsWith('project_')) {
+                rightCol.appendChild(div);
+            } else if (field.key === 'context') {
+                // Overall Context goes below columns
+                div.style.marginTop = '10px';
                 container.appendChild(div);
             }
         });
@@ -2119,7 +2275,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 let contextText = '';
                 checkboxes.forEach(cb => {
-                    contextText += `${cb.dataset.label}: ${cb.value}. `;
+                    contextText += `${cb.dataset.label}: ${cb.value}.`;
                 });
 
                 // Append to input
@@ -2295,7 +2451,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const file = e.target.files[0];
             if (file) {
                 ctxSelectedFile = file;
-                ctxFilePreview.textContent = `Selected: ${file.name}`;
+                ctxFilePreview.textContent = `Selected: ${file.name} `;
                 ctxFileUploadArea.querySelector('span').textContent = 'Change file';
             }
         });
@@ -2487,19 +2643,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (el && el.value.trim()) {
                     hasSectionContent = true;
                     sectionHtml += `
-                        <div class="preview-item">
+                <div class="preview-item">
                             <span class="preview-label">${field.label}</span>
                             <span class="preview-value">${el.value.trim()}</span>
                         </div>
-                    `;
+                `;
                 }
             });
 
             if (hasSectionContent) {
                 hasContent = true;
                 return `
-                    <div class="preview-section">
-                        <div class="preview-section-title">${title}</div>
+                <div class="preview-section">
+                    <div class="preview-section-title">${title}</div>
                         ${sectionHtml}
                     </div>
                 `;
@@ -2626,7 +2782,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             setLoading(btnUpdateProjectContext, true);
             try {
-                const res = await fetch(`/projects/${currentProjectId}`, {
+                const res = await fetch(`/ projects / ${currentProjectId} `, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -2687,7 +2843,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             setLoading(btnUpdateVersion, true);
             try {
-                const res = await fetch(`/context/versions/${currentVersionId}`, {
+                const res = await fetch(`/ context / versions / ${currentVersionId} `, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -2719,7 +2875,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             setLoading(btnEditVersionDetails, true);
             try {
-                const res = await fetch(`/context/version/${currentVersionId}`);
+                const res = await fetch(`/ context / version / ${currentVersionId} `);
                 if (res.ok) {
                     const version = await res.json();
                     document.getElementById('save-version-name').value = version.name;
@@ -2767,7 +2923,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let res;
                 if (isEditingVersion) {
                     // Update existing version metadata (name/desc only)
-                    res = await fetch(`/context/versions/${currentVersionId}`, {
+                    res = await fetch(`/ context / versions / ${currentVersionId} `, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name, description: desc })
@@ -2916,7 +3072,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <strong>Impact:</strong> ${s.impact}
                     </div>
                 </div>
-            `).join('');
+                `).join('');
         }
 
         let featuresHtml = '';
@@ -2927,7 +3083,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         viewResults.innerHTML = `
-            <div class="insight-section">
+                <div class="insight-section">
                 <h3><i class="fa-solid fa-palette"></i> Creative Summary</h3>
                 <p>${data.creative_summary}</p>
             </div>
@@ -2951,7 +3107,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Suggestions for Improvement</h3>
                 ${suggestionsHtml}
             </div>
-        `;
+            `;
+    }
+
+    // --- Asset Info Modal ---
+
+    const closeInfoModal = document.getElementById('close-modal-asset-info');
+    if (closeInfoModal) {
+        closeInfoModal.addEventListener('click', () => {
+            document.getElementById('modal-asset-info').hidden = true;
+        });
     }
 
 });

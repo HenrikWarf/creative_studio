@@ -109,11 +109,11 @@
                             <p class="text-muted" style="margin-bottom: 1rem;">Select context elements to include in
                                 your prompt.</p>
                             <div id="context-checkboxes-img"
-                                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+                                style="display: grid; grid-template-columns: auto auto; justify-content: start; gap: 10px 40px;">
                                 <!-- Checkboxes injected here -->
                             </div>
                             <button id="btn-apply-context-img" class="secondary-btn small-btn"
-                                style="margin-top: 1rem;">
+                                style="margin-top: 1rem; white-space: nowrap; width: auto;">
                                 Apply to Prompt
                             </button>
                         </div>
@@ -230,11 +230,11 @@
                             <p class="text-muted" style="margin-bottom: 1rem;">Select context elements to include in
                                 your instruction.</p>
                             <div id="context-checkboxes-edit"
-                                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+                                style="display: grid; grid-template-columns: auto auto; justify-content: start; gap: 10px 40px;">
                                 <!-- Checkboxes injected here -->
                             </div>
                             <button id="btn-apply-context-edit" class="secondary-btn small-btn"
-                                style="margin-top: 1rem;">
+                                style="margin-top: 1rem; white-space: nowrap; width: auto;">
                                 Apply to Instruction
                             </button>
                         </div>
@@ -701,7 +701,7 @@
                                     <div style="display: flex; gap: 5px;">
                                         <button id="btn-synthesize-context" class="icon-btn small-btn"
                                             title="Synthesize from other fields"
-                                            style="font-size: 0.8rem; padding: 2px 5px; color: var(--accent-color);">
+                                            style="font-size: 0.8rem; padding: 2px 5px; color: var(--accent-color); white-space: nowrap; width: auto;">
                                             <i class="fa-solid fa-layer-group"></i> Synthesize
                                         </button>
                                         <button class="icon-btn small-btn enhance-field-btn" data-target="ctx-overall"
@@ -722,11 +722,11 @@
                                 <h3 style="margin: 0;">Prompt Preview</h3>
                                 <div style="display: flex; gap: 8px;">
                                     <button id="btn-get-insights" class="secondary-btn small-btn"
-                                        title="Get AI Insights">
+                                        title="Get AI Insights" style="white-space: nowrap; width: auto;">
                                         <i class="fa-regular fa-lightbulb"></i> Insights
                                     </button>
                                     <button id="btn-copy-preview" class="secondary-btn small-btn"
-                                        title="Copy to Clipboard">
+                                        title="Copy to Clipboard" style="white-space: nowrap; width: auto;">
                                         <i class="fa-regular fa-copy"></i> Copy
                                     </button>
                                 </div>
@@ -1088,6 +1088,38 @@
             <button id="btn-confirm-enhance" class="primary-btn full-width">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> Enhance
             </button>
+        </div>
+    </div>
+    <!-- Asset Info Modal -->
+    <div id="modal-asset-info" class="modal" hidden>
+        <div class="modal-content glass-panel" style="width: 500px; max-width: 90vw;">
+            <span class="close-modal" id="close-modal-asset-info">&times;</span>
+            <h2>Asset Details</h2>
+
+            <div
+                style="text-align: center; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px;">
+                <img id="info-asset-img" src="" alt="Asset Preview"
+                    style="max-height: 200px; max-width: 100%; object-fit: contain;">
+            </div>
+
+            <div class="metadata-grid" style="grid-template-columns: 1fr; gap: 15px;">
+                <div class="metadata-item">
+                    <strong>Prompt</strong>
+                    <p id="info-prompt"
+                        style="margin-top: 5px; font-size: 0.95rem; color: var(--text-secondary); max-height: 100px; overflow-y: auto;">
+                    </p>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="metadata-item">
+                        <strong>Model Type</strong>
+                        <span id="info-model-type" style="display: block; margin-top: 5px;">-</span>
+                    </div>
+                    <div class="metadata-item">
+                        <strong>Context Version</strong>
+                        <span id="info-context-version" style="display: block; margin-top: 5px;">-</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <script src="script.js"></script>

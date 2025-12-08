@@ -34,6 +34,8 @@ class Asset(Base):
     type = Column(String) # image, video, tryon
     url = Column(String)
     prompt = Column(Text, nullable=True)
+    model_type = Column(String, nullable=True)
+    context_version = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     project = relationship("Project", back_populates="assets")

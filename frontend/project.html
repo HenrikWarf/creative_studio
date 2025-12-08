@@ -182,6 +182,39 @@
         </div>
     </div>
 
+    <!-- Asset Info Modal -->
+    <div id="modal-asset-info" class="modal" hidden>
+        <div class="modal-content glass-panel" style="width: 500px; max-width: 90vw;">
+            <span class="close-modal" id="close-modal-asset-info">&times;</span>
+            <h2>Asset Details</h2>
+
+            <div
+                style="text-align: center; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px;">
+                <img id="info-asset-img" src="" alt="Asset Preview"
+                    style="max-height: 200px; max-width: 100%; object-fit: contain;">
+            </div>
+
+            <div class="metadata-grid" style="grid-template-columns: 1fr; gap: 15px;">
+                <div class="metadata-item">
+                    <strong>Prompt</strong>
+                    <p id="info-prompt"
+                        style="margin-top: 5px; font-size: 0.95rem; color: var(--text-secondary); max-height: 100px; overflow-y: auto;">
+                    </p>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="metadata-item">
+                        <strong>Model Type</strong>
+                        <span id="info-model-type" style="display: block; margin-top: 5px;">-</span>
+                    </div>
+                    <div class="metadata-item">
+                        <strong>Context Version</strong>
+                        <span id="info-context-version" style="display: block; margin-top: 5px;">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Edit Image Modal -->
     <div id="modal-edit" class="modal" hidden>
         <div class="modal-content glass-panel"
