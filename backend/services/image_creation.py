@@ -19,8 +19,9 @@ async def generate_image(
     reference_images: Optional[List[UploadFile]] = None,
     style_images: Optional[List[UploadFile]] = None,
     product_images: Optional[List[UploadFile]] = None,
-    scene_images: Optional[List[UploadFile]] = None
-) -> str:
+    scene_images: Optional[List[UploadFile]] = None,
+    num_images: int = 1
+) -> List[str]:
     """
     Generates an image based on prompt and optional reference images.
     """
@@ -59,50 +60,51 @@ async def generate_image(
     # For "Image Creation", we might be using Imagen 3 or Gemini's image generation capabilities.
     # The user said "Gemini 2.5 Flash Image".
     
-    try:
-        response = client.models.generate_content(
-            model=model_name,
-            contents=contents,
-            # config=... # Add generation config if needed
-        )
-        
-        print(f"DEBUG: Response candidates: {response.candidates}")
-        if response.candidates and response.candidates[0].content:
-             print(f"DEBUG: First candidate content parts: {response.candidates[0].content.parts}")
-        
-        # Extract image from response
-        # Assuming standard Gemini multimodal response where image is in inline_data
-        # Note: This structure might vary based on the specific model version and SDK.
-        # We will attempt to find the image bytes.
-        
-        generated_image_bytes = None
-        
-        # Check candidates
-        if response.candidates and response.candidates[0].content.parts:
-            for part in response.candidates[0].content.parts:
-                if part.inline_data and part.inline_data.data:
-                    generated_image_bytes = part.inline_data.data
-                    break
-        
-        if not generated_image_bytes:
-            # Fallback for different response structures (e.g. if it returns an Image object directly in some SDK versions)
-            # Or if it returns a URI (which we would then need to download, but usually it's bytes for generation)
-            raise ValueError("No image data found in response")
+    generated_urls = []
+    
+    # Loop for multiple images
+    for _ in range(num_images):
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=contents,
+                # config=... # Add generation config if needed
+            )
+            
+            print(f"DEBUG: Response candidates: {response.candidates}")
+            if response.candidates and response.candidates[0].content:
+                 print(f"DEBUG: First candidate content parts: {response.candidates[0].content.parts}")
+            
+            # Extract image from response
+            generated_image_bytes = None
+            
+            # Check candidates
+            if response.candidates and response.candidates[0].content.parts:
+                for part in response.candidates[0].content.parts:
+                    if part.inline_data and part.inline_data.data:
+                        generated_image_bytes = part.inline_data.data
+                        break
+            
+            if not generated_image_bytes:
+                raise ValueError("No image data found in response")
 
-        # Generate unique filename
-        filename = f"{uuid.uuid4().hex}.png"
+            # Generate unique filename
+            filename = f"{uuid.uuid4().hex}.png"
+            
+            # Upload to GCS
+            image_url = upload_bytes(generated_image_bytes, filename, content_type="image/png")
+            print(f"DEBUG: Final Image URL: {image_url}")
+            generated_urls.append(image_url)
+            
+        except Exception as e:
+            print(f"Error generating image {_}: {e}")
+            # Continue or raise? Let's continue and return what we have, or raise if all fail.
+            # For now, let's raise to be safe, or we could return partial results.
+            # Raising ensures the user knows something went wrong.
+            raise e
+    
+    return generated_urls
         
-        # Upload to GCS
-        image_url = upload_bytes(generated_image_bytes, filename, content_type="image/png")
-        print(f"DEBUG: Final Image URL: {image_url}")
-        
-        return image_url
-        
-    except Exception as e:
-        print(f"Error generating image: {e}")
-        # Return placeholder on error so app doesn't crash, but log the error
-        # return "https://placehold.co/600x400?text=Error+Generating+Image"
-        raise e
 
 async def edit_image(
     image_data: bytes,
@@ -142,34 +144,44 @@ async def edit_image(
             )
         ))
         
-        response = client.models.generate_content(
-            model=model_name,
-            contents=contents
-        )
-        
-        print(f"DEBUG: Edit Response: {response}")
-        
-        generated_image_bytes = None
-        
-        if not response.candidates:
-             raise ValueError("No candidates returned from model.")
-             
-        candidate = response.candidates[0]
-        if not candidate.content:
-             print(f"DEBUG: Finish Reason: {candidate.finish_reason}")
-             raise ValueError(f"Model returned no content. Finish reason: {candidate.finish_reason}")
+        generated_images_b64 = []
+    
+        for _ in range(num_images):
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=contents
+                )
+                
+                print(f"DEBUG: Edit Response: {response}")
+                
+                generated_image_bytes = None
+                
+                if not response.candidates:
+                     raise ValueError("No candidates returned from model.")
+                     
+                candidate = response.candidates[0]
+                if not candidate.content:
+                     print(f"DEBUG: Finish Reason: {candidate.finish_reason}")
+                     raise ValueError(f"Model returned no content. Finish reason: {candidate.finish_reason}")
 
-        if candidate.content.parts:
-            for part in candidate.content.parts:
-                if part.inline_data and part.inline_data.data:
-                    generated_image_bytes = part.inline_data.data
-                    break
-        
-        if not generated_image_bytes:
-            raise ValueError("No image data found in response")
+                if candidate.content.parts:
+                    for part in candidate.content.parts:
+                        if part.inline_data and part.inline_data.data:
+                            generated_image_bytes = part.inline_data.data
+                            break
+                
+                if not generated_image_bytes:
+                    raise ValueError("No image data found in response")
 
-        # Return as Base64 string
-        return base64.b64encode(generated_image_bytes).decode('utf-8')
+                # Return as Base64 string
+                generated_images_b64.append(base64.b64encode(generated_image_bytes).decode('utf-8'))
+                
+            except Exception as e:
+                print(f"Error editing image {_}: {e}")
+                raise e
+                
+        return generated_images_b64
 
     except Exception as e:
         print(f"Error editing image: {e}")

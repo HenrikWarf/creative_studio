@@ -22,37 +22,28 @@ async def generate(
     scene_images: List[UploadFile] = File(None),
     project_id: Optional[int] = Form(None),
     model_name: Optional[str] = Form("gemini-2.5-flash-image"),
+    num_images: int = Form(1),
     db: Session = Depends(get_db)
 ):
     try:
         # Call
         # image_url here is now the blob name from storage.upload_bytes
-        blob_name = await generate_image(
+        blob_names = await generate_image(
             prompt, 
             style=style, 
             reference_images=reference_images,
             style_images=style_images,
             product_images=product_images,
             scene_images=scene_images,
-            model_name=model_name
+            model_name=model_name,
+            num_images=num_images
         )
         
-        # Auto-save removed. User must explicitly save.
-        # if project_id:
-        #     asset = models.Asset(
-        #         project_id=project_id,
-        #         type="image",
-        #         url=blob_name, # Store blob name
-        #         prompt=prompt
-        #     )
-        #     db.add(asset)
-        #     db.commit()
-            
-        # Generate signed URL for immediate display
+        # Generate signed URLs for immediate display
         from backend.services.storage import generate_signed_url
-        signed_url = generate_signed_url(blob_name)
+        signed_urls = [generate_signed_url(blob_name) for blob_name in blob_names]
             
-        return {"image_url": signed_url}
+        return {"images": signed_urls}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -63,7 +54,8 @@ async def edit(
     instruction: str = Form(...),
     style: Optional[str] = Form(None),
     reference_images: List[UploadFile] = File(None),
-    model_name: Optional[str] = Form("gemini-2.5-flash-image")
+    model_name: Optional[str] = Form("gemini-2.5-flash-image"),
+    num_images: int = Form(1)
 ):
     try:
         if image:
@@ -78,9 +70,16 @@ async def edit(
         else:
             raise HTTPException(status_code=400, detail="Either image file or image_url must be provided")
 
-        # Returns base64 string
-        image_b64 = await edit_image(image_bytes, instruction, style=style, reference_images=reference_images, model_name=model_name)
-        return {"image_data": image_b64}
+        # Returns list of base64 strings
+        images_b64 = await edit_image(
+            image_bytes, 
+            instruction, 
+            style=style, 
+            reference_images=reference_images, 
+            model_name=model_name,
+            num_images=num_images
+        )
+        return {"images": images_b64}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

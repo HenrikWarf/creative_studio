@@ -1553,3 +1553,52 @@ input:checked+.slider:before {
         min-height: 150px;
     }
 }
+
+.action-btn {
+    padding: 8px 12px !important;
+    font-size: 0.85rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    width: auto !important;
+    /* Allow auto width */
+    height: auto !important;
+    /* Allow auto height */
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border-color: var(--accent-color);
+    transform: translateY(-1px);
+}
+
+.action-btn i {
+    font-size: 0.9rem;
+}
+
+#btn-edit-project-meta {
+    padding: 8px 12px !important;
+    width: auto !important;
+    height: auto !important;
+    display: inline-flex !important;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+#btn-edit-project-meta:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border-color: var(--accent-color);
+}

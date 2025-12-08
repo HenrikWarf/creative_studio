@@ -486,9 +486,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h2>${project.name}</h2>
                     <p class="text-muted">${project.description || 'No description'}</p>
                 </div>
-                <button id="btn-edit-project-meta" class="secondary-btn small-btn">
-                    <i class="fa-solid fa-pen"></i> Edit
-                </button>
             </div>
             <div class="glass-panel" style="margin-top: 1rem; padding: 1.5rem;">
                 
@@ -542,7 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 <!-- Overall Context -->
                 <div class="metadata-section" style="margin-bottom: 0;">
-                    <h4>Overall Context / Guidelines</h4>
+                    <h4 style="margin-bottom: 0; font-size: 1.2rem; color: var(--accent-color); font-weight: 600;">Overall Context / Guidelines</h4>
                     <div class="metadata-item" style="width: 100%;">
                         <span>${project.context || 'No context provided.'}</span>
                     </div>
@@ -734,7 +731,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const response = await fetch(`/ assets / ${assetId} `, {
+            const response = await fetch(`/assets/${assetId}`, {
                 method: 'DELETE'
             });
 
@@ -1021,7 +1018,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                const response = await fetch(`/ projects / ${currentProjectData.id} `, {
+                const response = await fetch(`/projects/${currentProjectData.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1063,6 +1060,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const imgPrompt = document.getElementById('img-prompt');
     const imgContext = document.getElementById('img-context');
     const imgStyle = document.getElementById('img-style');
+    const imgCountSlider = document.getElementById('img-count-slider');
+    const imgCountDisplay = document.getElementById('img-count-display');
+
+    if (imgCountSlider && imgCountDisplay) {
+        imgCountSlider.addEventListener('input', (e) => {
+            imgCountDisplay.textContent = e.target.value;
+        });
+    }
 
     // Inputs
     const imgFilesInput = document.getElementById('img-files');
@@ -1190,6 +1195,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const editPrompt = document.getElementById('edit-prompt');
     const editContext = document.getElementById('edit-context');
     const btnGenerateEditPage = document.getElementById('btn-generate-edit-page');
+    const editCountSlider = document.getElementById('edit-count-slider');
+    const editCountDisplay = document.getElementById('edit-count-display');
+
+    if (editCountSlider && editCountDisplay) {
+        editCountSlider.addEventListener('input', (e) => {
+            editCountDisplay.textContent = e.target.value;
+        });
+    }
     const btnResetEditPage = document.getElementById('btn-reset-edit-page');
     const editResultContainer = document.getElementById('edit-result-container');
 
@@ -1302,9 +1315,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('instruction', fullInstruction);
 
                 // Model Selection
-                const modelToggle = document.getElementById('model-toggle-edit-page');
                 const modelName = modelToggle && modelToggle.checked ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
                 formData.append('model_name', modelName);
+
+                if (editCountSlider) formData.append('num_images', editCountSlider.value);
 
                 const response = await fetch('/image-creation/edit', {
                     method: 'POST',
@@ -1313,24 +1327,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
 
                 if (response.ok) {
-                    // data.image_data is base64
-                    const newImageSrc = `data:image/png;base64,${data.image_data}`;
+                    // Clear container
+                    editResultContainer.innerHTML = '';
+                    editResultContainer.style.display = 'grid';
+                    editResultContainer.style.gridTemplateColumns = `repeat(${data.images.length}, 1fr)`;
+                    editResultContainer.style.gap = '1rem';
 
-                    // Display result
-                    editResultContainer.innerHTML = `
-                <img src="${newImageSrc}" alt="Edited Image" style="max-height: 60vh; object-fit: contain;">
-                    <div class="project-actions" style="justify-content: center; margin-top: 1rem; gap: 10px;">
-                        <button class="secondary-btn" onclick="openEditModal('${newImageSrc}')">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> Edit
-                        </button>
-                        <button class="secondary-btn" onclick="saveImageToProject('${newImageSrc}', this)">
-                            <i class="fa-regular fa-floppy-disk"></i> Save to Project
-                        </button>
-                        <button class="secondary-btn" onclick="downloadImage('${newImageSrc}', 'edited_image.png')">
-                            <i class="fa-solid fa-download"></i> Download
-                        </button>
-                    </div>
-            `;
+                    data.images.forEach((b64, index) => {
+                        const newImageSrc = `data:image/png;base64,${b64}`;
+                        const card = document.createElement('div');
+                        card.className = 'image-card';
+                        card.innerHTML = `
+                            <img src="${newImageSrc}" alt="Edited Image ${index + 1}" style="width: 100%; border-radius: 8px; margin-bottom: 0.5rem;">
+                            <div class="image-actions" style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem;">
+                                <button class="action-btn" onclick="saveImageToProject('${newImageSrc}', this)">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save
+                                </button>
+                                <button class="action-btn" onclick="openEditModal('${newImageSrc}')">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                                </button>
+                                <a href="${newImageSrc}" download="edited-image-${index}.png" class="action-btn">
+                                    <i class="fa-solid fa-download"></i>
+                                </a>
+                            </div>
+                        `;
+                        editResultContainer.appendChild(card);
+                    });
                 } else {
                     showAlert('Error: ' + data.detail);
                 }
@@ -1679,6 +1701,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const fullPrompt = context ? `${prompt}\n\nContext:\n${context}` : prompt;
             formData.append('prompt', fullPrompt);
             if (style) formData.append('style', style);
+            if (imgCountSlider) formData.append('num_images', imgCountSlider.value);
 
             // Append all file types
             const appendFiles = (files, key) => {
@@ -1709,23 +1732,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Display result
-                    // Display result
-                    imgResultContainer.innerHTML = `
-                <img src="${data.image_url}" alt="Generated Image" style="max-height: 60vh; object-fit: contain;">
-                    <div class="project-actions" style="justify-content: center; margin-top: 1rem; gap: 10px;">
-                        <button class="secondary-btn" onclick="openEditModal('${data.image_url}')">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> Edit
-                        </button>
-                        <button class="secondary-btn" onclick="saveImageToProject('${data.image_url}', this)">
-                            <i class="fa-regular fa-floppy-disk"></i> Save to Project
-                        </button>
-                        <button class="secondary-btn" onclick="downloadImage('${data.image_url}', 'generated_image.png')">
-                            <i class="fa-solid fa-download"></i> Download
-                        </button>
-                    </div>
-            `;
 
+                    // Clear container
+                    imgResultContainer.innerHTML = '';
+                    imgResultContainer.style.display = 'grid';
+                    imgResultContainer.style.gridTemplateColumns = `repeat(${data.images.length}, 1fr)`;
+                    imgResultContainer.style.gap = '1rem';
+
+                    data.images.forEach((url, index) => {
+                        const card = document.createElement('div');
+                        card.className = 'image-card';
+                        card.innerHTML = `
+                        <img src="${url}" alt="Generated Image ${index + 1}" style="width: 100%; border-radius: 8px; margin-bottom: 0.5rem;">
+                        <div class="image-actions" style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem;">
+                            <button class="action-btn" onclick="saveImageToProject('${url}', this)">
+                                <i class="fa-solid fa-floppy-disk"></i> Save
+                            </button>
+                            <button class="action-btn" onclick="openEditModal('${url}')">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                            <a href="${url}" download="generated-image-${index}.png" class="action-btn">
+                                <i class="fa-solid fa-download"></i>
+                            </a>
+                        </div>
+                    `;
+                        imgResultContainer.appendChild(card);
+                    });
                 } else {
                     showAlert('Error: ' + data.detail);
                 }
@@ -2915,7 +2947,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             setLoading(btnUpdateVersion, true);
             try {
-                const res = await fetch(`/ context / versions / ${currentVersionId} `, {
+                const res = await fetch(`/context/versions/${currentVersionId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -2995,7 +3027,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let res;
                 if (isEditingVersion) {
                     // Update existing version metadata (name/desc only)
-                    res = await fetch(`/ context / versions / ${currentVersionId} `, {
+                    res = await fetch(`/context/versions/${currentVersionId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name, description: desc })
