@@ -53,6 +53,10 @@
                     <i class="fa-solid fa-video"></i>
                     <span>Video Creation</span>
                 </li>
+                <li data-target="video-magic">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Video Magic</span>
+                </li>
             </ul>
         </nav>
 
@@ -576,6 +580,156 @@
             </section>
 
             <!-- Context Engineering Section -->
+            <section id="video-magic">
+                <header>
+                    <h1>Video Magic</h1>
+                    <p>Advanced video generation tools powered by Gemini</p>
+                </header>
+
+                <div class="tabs" style="margin-bottom: 2rem;">
+                    <button class="tab-btn active" data-tab="vm-script">Script Generation</button>
+                    <button class="tab-btn" data-tab="vm-img-to-video">Image to Video</button>
+                    <button class="tab-btn" data-tab="vm-first-last">First/Last Frame</button>
+                </div>
+
+                <!-- Tab Content: Script Generation -->
+                <div id="vm-script" class="tab-content active">
+                    <div style="display: flex; flex-direction: column; gap: 2rem; height: 100%;">
+
+                        <!-- Top: Context Engineering (Full Width) -->
+                        <div class="glass-panel full-width" style="padding: 0;">
+                            <button class="accordion-header" id="btn-context-accordion-vm-script">
+                                <span><i class="fa-solid fa-layer-group"></i> Context Engineering <small
+                                        class="text-muted" style="font-size: 0.8em; margin-left: 10px;">(Need to apply
+                                        the context to make use of
+                                        created context)</small></span>
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </button>
+                            <div class="accordion-content" id="context-content-vm-script" hidden>
+                                <div style="padding: 1rem;">
+                                    <div class="input-group" style="margin-bottom: 1.5rem;">
+                                        <label>Context Data (Read-only view of applied context)</label>
+                                        <textarea id="vm-script-context" class="large-prompt" readonly
+                                            style="min-height: 100px; font-size: 0.8rem; background: rgba(255,255,255,0.05);"></textarea>
+                                    </div>
+                                    <!-- Select All / Clear All buttons are injected here by script.js, we rely on their internal spacing or add margin to the container below -->
+                                    <div id="context-checkboxes-vm-script"
+                                        style="display: grid; grid-template-columns: auto auto; justify-content: start; gap: 10px 40px; margin-top: 1rem;">
+                                        <!-- Checkboxes injected here -->
+                                    </div>
+                                    <button id="btn-apply-context-vm-script" class="secondary-btn small-btn"
+                                        style="margin-top: 1.5rem; white-space: nowrap; width: auto;">
+                                        Apply to Prompt
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom: Split View (Prompt & Output) -->
+                        <div class="workspace split-view" style="flex: 1; min-height: 0;">
+                            <!-- Left: Prompt -->
+                            <div class="controls glass-panel" style="display: flex; flex-direction: column;">
+                                <div class="input-group" style="display: flex; flex-direction: column;">
+                                    <label>Video Goal / Prompt</label>
+                                    <textarea id="vm-script-prompt" class="large-prompt"
+                                        placeholder="Describe the goal of the video, the product, and the desired tone..."
+                                        style="height: 300px; resize: none;"></textarea>
+                                </div>
+                                <button id="btn-generate-script" class="primary-btn full-width"
+                                    style="margin-top: 1.5rem;">
+                                    <i class="fa-solid fa-scroll"></i> Generate Script
+                                </button>
+                            </div>
+
+                            <!-- Right: Output -->
+                            <div class="preview-area glass-panel"
+                                style="display: flex; flex-direction: column; padding: 0; position: relative; overflow: visible;">
+                                <div
+                                    style="padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; min-height: 60px;">
+                                    <h3 style="margin: 0; white-space: nowrap;">Generated Script</h3>
+                                </div>
+                                <button id="btn-edit-script" class="secondary-btn small-btn"
+                                    style="white-space: nowrap; position: absolute; top: 1rem; right: 1rem; z-index: 100; width: auto; min-width: max-content;"
+                                    hidden>
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Edit with Gemini
+                                </button>
+                                <div id="vm-script-output" class="script-output-container"
+                                    style="flex: 1; overflow-y: auto; padding: 1rem;">
+                                    <div class="placeholder-state">
+                                        <i class="fa-solid fa-scroll"
+                                            style="font-size: 3rem; color: var(--text-secondary); opacity: 0.5;"></i>
+                                        <p style="margin-top: 1rem; color: var(--text-secondary);">Generated script will
+                                            appear here</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Image to Video (Placeholder) -->
+                <div id="vm-img-to-video" class="tab-content">
+                    <!-- Placeholder removed -->
+                </div>
+
+                <!-- Tab Content: First/Last Frame (Placeholder) -->
+                <div id="vm-first-last" class="tab-content">
+                    <!-- Placeholder removed -->
+                </div>
+            </section>
+
+            <style>
+                /* Script Styling */
+                .script-scene {
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid var(--border-color);
+                    border-radius: 8px;
+                    margin-bottom: 1.5rem;
+                    overflow: hidden;
+                }
+
+                .scene-header {
+                    background: rgba(255, 255, 255, 0.05);
+                    padding: 0.75rem 1rem;
+                    font-weight: 600;
+                    color: var(--accent-color);
+                    border-bottom: 1px solid var(--border-color);
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                }
+
+                .scene-content {
+                    padding: 1rem;
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 1.5rem;
+                }
+
+                .scene-col strong {
+                    display: block;
+                    margin-bottom: 0.5rem;
+                    color: var(--text-secondary);
+                    font-size: 0.9rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }
+
+                .scene-col p {
+                    margin: 0;
+                    line-height: 1.6;
+                    color: var(--text-primary);
+                }
+
+                @media (max-width: 768px) {
+                    .scene-content {
+                        grid-template-columns: 1fr;
+                        gap: 1rem;
+                    }
+                }
+            </style>
+            </section>
+
             <section id="context-engineering">
                 <header
                     style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
@@ -1177,7 +1331,7 @@
         <div class="modal-content glass-panel">
             <span class="close-modal" id="close-optimize-modal">&times;</span>
             <h2>Enhance Prompt?</h2>
-            <p>Gemini will rewrite your prompt to be more descriptive and optimized for better image generation.</p>
+            <p>Gemini will rewrite your prompt to be more descriptive and optimized for better asset generation.</p>
             <!-- Original prompt display removed to prevent overflow -->
             <button id="btn-confirm-optimize" class="primary-btn full-width">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> Enhance & Replace

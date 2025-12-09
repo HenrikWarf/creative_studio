@@ -2131,6 +2131,11 @@ document.addEventListener('DOMContentLoaded', () => {
         btnOptimizeEdit.addEventListener('click', () => openOptimizeModal('edit-prompt'));
     }
 
+    const btnOptimizeVideo = document.getElementById('btn-optimize-video');
+    if (btnOptimizeVideo) {
+        btnOptimizeVideo.addEventListener('click', () => openOptimizeModal('video-prompt'));
+    }
+
     if (closeOptimizeModal) {
         closeOptimizeModal.addEventListener('click', () => {
             modalOptimize.hidden = true;
@@ -3349,6 +3354,184 @@ document.addEventListener('DOMContentLoaded', () => {
                 setLoading(btnGenerateVideo, false);
             }
         });
+    }
+
+    // --- Video Magic Logic ---
+    const videoMagicTabs = document.querySelectorAll('#video-magic .tab-btn');
+    const videoMagicContents = document.querySelectorAll('#video-magic .tab-content');
+
+    videoMagicTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove active class from all tabs and contents
+            videoMagicTabs.forEach(t => t.classList.remove('active'));
+            videoMagicContents.forEach(c => c.classList.remove('active'));
+
+            // Add active class to clicked tab and corresponding content
+            tab.classList.add('active');
+            const contentId = tab.dataset.tab;
+            document.getElementById(contentId).classList.add('active');
+        });
+    });
+
+    // Initialize Context Accordion for Script Generation
+    setupContextAccordion('btn-context-accordion-vm-script', 'context-content-vm-script', 'context-checkboxes-vm-script', 'btn-apply-context-vm-script', 'vm-script-context', null);
+
+    const btnGenerateScript = document.getElementById('btn-generate-script');
+    const vmScriptPrompt = document.getElementById('vm-script-prompt');
+    const vmScriptContext = document.getElementById('vm-script-context');
+    const vmScriptOutput = document.getElementById('vm-script-output');
+    const btnEditScript = document.getElementById('btn-edit-script');
+
+    let currentScriptData = null;
+
+    if (btnGenerateScript) {
+        btnGenerateScript.addEventListener('click', async () => {
+            if (!vmScriptPrompt.value) {
+                showAlert('Please enter a prompt for the script.');
+                return;
+            }
+
+            setLoading(btnGenerateScript, true);
+            vmScriptOutput.innerHTML = `
+                <div class="loading-state">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-color);"></i>
+                    <p style="margin-top: 1rem;">Generating script with Gemini ...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('/video-magic/script/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: vmScriptPrompt.value,
+                        context: vmScriptContext.value
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentScriptData = data.script;
+                    renderScript(data.script);
+                    btnEditScript.hidden = false;
+                } else {
+                    const error = await response.json();
+                    vmScriptOutput.innerHTML = `
+                        <div class="error-state">
+                            <i class="fa-solid fa-triangle-exclamation" style="font-size: 2rem; color: var(--error-color);"></i>
+                            <p style="margin-top: 1rem;">Error: ${error.detail || 'Failed to generate script'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error generating script:', error);
+                vmScriptOutput.innerHTML = `
+                    <div class="error-state">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 2rem; color: var(--error-color);"></i>
+                        <p style="margin-top: 1rem;">An error occurred. Please try again.</p>
+                    </div>
+                `;
+            } finally {
+                setLoading(btnGenerateScript, false);
+            }
+        });
+    }
+
+    // Edit Script Logic
+    if (btnEditScript) {
+        btnEditScript.addEventListener('click', () => {
+            // Reuse the enhance modal or create a new one?
+            // Let's reuse the enhance modal structure but we need a specific one for script editing
+            // because the endpoint is different.
+            // Actually, we can reuse `modal-enhance-field` if we change the target ID or logic.
+            // But let's create a specific modal for script editing to be clean.
+            // Wait, we don't have a specific modal in HTML yet.
+            // Let's use `openOptimizeModal` logic but for script.
+            // Or better, let's inject a modal dynamically or use `prompt` for now?
+            // No, `prompt` is ugly.
+            // Let's use the `modal-optimize-prompt` but change the title/text dynamically?
+            // Or just add a simple modal to HTML.
+            // I'll add a modal to HTML in the next step or use `modal-enhance-field` logic.
+            // Let's use `modal-enhance-field` logic.
+
+            const modalEnhance = document.getElementById('modal-enhance-field');
+            const instructions = document.getElementById('enhance-instructions');
+            const btnConfirm = document.getElementById('btn-confirm-enhance');
+
+            if (modalEnhance && instructions && btnConfirm) {
+                instructions.value = '';
+                modalEnhance.hidden = false;
+
+                // Remove previous listeners to avoid duplicates
+                const newBtn = btnConfirm.cloneNode(true);
+                btnConfirm.parentNode.replaceChild(newBtn, btnConfirm);
+
+                newBtn.addEventListener('click', async () => {
+                    if (!instructions.value) {
+                        showAlert('Please enter instructions.');
+                        return;
+                    }
+
+                    setLoading(newBtn, true);
+                    try {
+                        const response = await fetch('/video-magic/script/edit', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                current_script: currentScriptData,
+                                instructions: instructions.value
+                            })
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            currentScriptData = data.script;
+                            renderScript(data.script);
+                            modalEnhance.hidden = true;
+                            showAlert('Script updated successfully!');
+                        } else {
+                            const error = await response.json();
+                            showAlert('Failed to update script: ' + (error.detail || 'Unknown error'));
+                        }
+                    } catch (error) {
+                        console.error('Error editing script:', error);
+                        showAlert('An error occurred.');
+                    } finally {
+                        setLoading(newBtn, false);
+                    }
+                });
+            }
+        });
+    }
+
+    function renderScript(scriptData) {
+        if (!scriptData || !Array.isArray(scriptData)) {
+            vmScriptOutput.innerHTML = '<p>Invalid script format received.</p>';
+            return;
+        }
+
+        let html = '<div class="script-container">';
+        scriptData.forEach((scene, index) => {
+            html += `
+                <div class="script-scene">
+                    <div class="scene-header">
+                        <i class="fa-solid fa-clapperboard"></i> Scene ${index + 1}
+                    </div>
+                    <div class="scene-content">
+                        <div class="scene-col scene-visual">
+                            <strong><i class="fa-solid fa-eye"></i> Visual</strong>
+                            <p>${scene.visual}</p>
+                        </div>
+                        <div class="scene-col scene-audio">
+                            <strong><i class="fa-solid fa-microphone-lines"></i> Audio</strong>
+                            <p>${scene.audio}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        vmScriptOutput.innerHTML = html;
     }
 
 });
