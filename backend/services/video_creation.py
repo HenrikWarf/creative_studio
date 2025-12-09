@@ -5,13 +5,24 @@ from google import genai
 from google.genai.types import GenerateVideosConfig
 from backend.services.storage import BUCKET_NAME
 
-client = genai.Client()
+from google.genai.types import GenerateVideosConfig
+from backend.services.storage import BUCKET_NAME
 
 async def generate_video(prompt: str, aspect_ratio: str = "16:9", quality: str = "speed") -> str:
     """
     Generates a video using Veo model.
     Returns the blob name of the generated video.
     """
+    if os.getenv("GOOGLE_GENAI_USE_VERTEXAI") == "True":
+        client = genai.Client(
+            vertexai=True,
+            project=os.getenv("GOOGLE_CLOUD_PROJECT"),
+            location=os.getenv("GOOGLE_CLOUD_LOCATION")
+        )
+        print("DEBUG: Using Vertex AI for video generation")
+    else:
+        client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+        print("DEBUG: Using Gemini API for video generation")
     # Select model based on quality preference
     # Select model based on quality preference
     if quality == "quality":
@@ -27,12 +38,19 @@ async def generate_video(prompt: str, aspect_ratio: str = "16:9", quality: str =
         
         print(f"DEBUG: Generating video with prompt: {prompt}, aspect_ratio: {aspect_ratio}")
 
+        config_params = {
+            "aspect_ratio": aspect_ratio,
+        }
+        
+        # If using Vertex AI, specify output_gcs_uri
+        if os.getenv("GOOGLE_GENAI_USE_VERTEXAI") == "True":
+            config_params["output_gcs_uri"] = output_gcs_uri
+            print(f"DEBUG: Using output_gcs_uri: {output_gcs_uri}")
+
         operation = client.models.generate_videos(
             model=model_name,
             prompt=prompt,
-            config=GenerateVideosConfig(
-                aspect_ratio=aspect_ratio,
-            ),
+            config=GenerateVideosConfig(**config_params),
         )
 
         print("DEBUG: Video generation started. Waiting for completion...")
@@ -45,6 +63,67 @@ async def generate_video(prompt: str, aspect_ratio: str = "16:9", quality: str =
 
         if operation.error:
              raise Exception(f"Video generation failed: {operation.error}")
+
+        # If Vertex AI with output_gcs_uri, we know where it is
+        if os.getenv("GOOGLE_GENAI_USE_VERTEXAI") == "True":
+            print(f"DEBUG: Video generated at {output_gcs_uri}")
+            
+            from backend.services.storage import storage_client
+            bucket = storage_client.bucket(BUCKET_NAME)
+            
+            # Vertex AI appends a timestamp and filename to the output_gcs_uri
+            # e.g. .../uuid.mp4/123456/sample_0.mp4
+            # We need to find this file and move it to filename
+            
+            actual_blob = None
+            max_retries = 10
+            
+            print(f"DEBUG: Looking for video files with prefix: {filename}")
+            
+            for i in range(max_retries):
+                # List blobs with the prefix
+                blobs = list(bucket.list_blobs(prefix=filename))
+                
+                for b in blobs:
+                    if b.name.endswith(".mp4") and b.name != filename:
+                        actual_blob = b
+                        break
+                
+                if actual_blob:
+                    print(f"DEBUG: Found generated video at: {actual_blob.name}")
+                    break
+                
+                print(f"DEBUG: Video file not found yet, retrying ({i+1}/{max_retries})...")
+                time.sleep(2)
+            
+            if actual_blob:
+                # Copy to the intended location
+                target_blob = bucket.blob(filename)
+                bucket.copy_blob(actual_blob, bucket, filename)
+                print(f"DEBUG: Moved video to {filename}")
+                
+                # Set content type
+                target_blob.content_type = "video/mp4"
+                target_blob.patch()
+                
+                # Clean up the original file (optional)
+                try:
+                    actual_blob.delete()
+                    print("DEBUG: Cleaned up original Vertex AI output file")
+                except Exception as e:
+                    print(f"WARNING: Failed to delete original file: {e}")
+            else:
+                print("WARNING: Could not find generated video file after retries.")
+                # Fallback: check if the file exists at filename directly
+                blob = bucket.blob(filename)
+                if blob.exists():
+                    blob.content_type = "video/mp4"
+                    blob.patch()
+                else:
+                    raise Exception("Failed to locate generated video in GCS")
+            
+            # We don't need to download/upload, it's already there.
+            return filename
 
         if operation.result and operation.result.generated_videos:
             uri = operation.result.generated_videos[0].video.uri

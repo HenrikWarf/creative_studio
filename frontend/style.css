@@ -283,6 +283,7 @@ textarea {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     color: var(--text-secondary);
 }
@@ -1601,4 +1602,14 @@ input:checked+.slider:before {
     background: rgba(255, 255, 255, 0.15);
     color: white;
     border-color: var(--accent-color);
+}
+
+/* Tab Content Visibility */
+.tab-content {
+    display: none;
+    height: 100%;
+}
+
+.tab-content.active {
+    display: block;
 }

@@ -10,7 +10,18 @@ from backend.services.storage import upload_bytes
 from backend import models
 from sqlalchemy.orm import Session
 
-client = genai.Client()
+def get_client():
+    if os.getenv("GOOGLE_GENAI_USE_VERTEXAI") == "True":
+        return genai.Client(
+            vertexai=True,
+            project=os.getenv("GOOGLE_CLOUD_PROJECT"),
+            location=os.getenv("GOOGLE_CLOUD_LOCATION")
+        )
+    else:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise Exception("GEMINI_API_KEY not found")
+        return genai.Client(api_key=api_key)
 
 async def generate_image(
     prompt: str,
@@ -65,6 +76,7 @@ async def generate_image(
     # Loop for multiple images
     for _ in range(num_images):
         try:
+            client = get_client()
             response = client.models.generate_content(
                 model=model_name,
                 contents=contents,
@@ -148,6 +160,7 @@ async def edit_image(
     
         for _ in range(num_images):
             try:
+                client = get_client()
                 response = client.models.generate_content(
                     model=model_name,
                     contents=contents
@@ -242,6 +255,7 @@ async def optimize_prompt_text(
             "Output ONLY the optimized prompt text, nothing else."
         )
         
+        client = get_client()
         response = client.models.generate_content(
             model=model_name,
             contents=prompt,

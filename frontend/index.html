@@ -143,6 +143,10 @@
                                     style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                                     <label>Context <span id="img-context-version"
                                             style="font-size: 0.8rem; color: var(--accent-color); margin-left: 0.5rem;"></span></label>
+                                    <button id="btn-clear-context-img" class="small-delete-btn" title="Remove Context"
+                                        style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
                                 </div>
                                 <textarea id="img-context" class="large-prompt"
                                     placeholder="Applied context will appear here..." readonly
@@ -297,6 +301,10 @@
                                     style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                                     <label>Context <span id="edit-context-version"
                                             style="font-size: 0.8rem; color: var(--accent-color); margin-left: 0.5rem;"></span></label>
+                                    <button id="btn-clear-context-edit" class="small-delete-btn" title="Remove Context"
+                                        style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
                                 </div>
                                 <textarea id="edit-context" class="large-prompt"
                                     placeholder="Applied context will appear here..." readonly
@@ -425,12 +433,10 @@
                             <div id="vto-cloth-preview-list" class="preview-list"></div>
                         </div>
                         <button id="btn-tryon" class="primary-btn full-width">
-                            <i class="fa-solid fa-wand-magic"></i> Try On
-                        </button>
-                        <button id="btn-reset-vto" class="secondary-btn full-width"
-                            style="justify-content: center; margin-top: 0.5rem;">
-                            <i class="fa-solid fa-eraser"></i> Clear
-                        </button>
+                            <button id="btn-reset-vto" class="secondary-btn full-width"
+                                style="justify-content: center; margin-top: 0.5rem;">
+                                <i class="fa-solid fa-eraser"></i> Clear
+                            </button>
                     </div>
                     <div class="preview-area glass-panel">
                         <div id="vto-result-container" class="empty-state">
@@ -493,6 +499,10 @@
                                     style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                                     <label>Context <span id="video-context-version"
                                             style="font-size: 0.8rem; color: var(--accent-color); margin-left: 0.5rem;"></span></label>
+                                    <button id="btn-clear-context-video" class="small-delete-btn" title="Remove Context"
+                                        style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
                                 </div>
                                 <textarea id="video-context" class="large-prompt"
                                     placeholder="Applied context will appear here..." readonly
@@ -607,11 +617,7 @@
                             </button>
                             <div class="accordion-content" id="context-content-vm-script" hidden>
                                 <div style="padding: 1rem;">
-                                    <div class="input-group" style="margin-bottom: 1.5rem;">
-                                        <label>Context Data (Read-only view of applied context)</label>
-                                        <textarea id="vm-script-context" class="large-prompt" readonly
-                                            style="min-height: 100px; font-size: 0.8rem; background: rgba(255,255,255,0.05);"></textarea>
-                                    </div>
+                                    <!-- Context Data view replaced by indicator below prompt -->
                                     <!-- Select All / Clear All buttons are injected here by script.js, we rely on their internal spacing or add margin to the container below -->
                                     <div id="context-checkboxes-vm-script"
                                         style="display: grid; grid-template-columns: auto auto; justify-content: start; gap: 10px 40px; margin-top: 1rem;">
@@ -634,6 +640,24 @@
                                     <textarea id="vm-script-prompt" class="large-prompt"
                                         placeholder="Describe the goal of the video, the product, and the desired tone..."
                                         style="height: 300px; resize: none;"></textarea>
+
+                                    <!-- Context Applied Indicator -->
+                                    <div
+                                        style="margin-top: 1rem; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <input type="checkbox" id="vm-script-context-checkbox" disabled
+                                                style="accent-color: var(--accent-color);">
+                                            <label id="vm-script-context-label" for="vm-script-context-checkbox"
+                                                style="cursor: default; color: var(--text-secondary);">Context not
+                                                applied</label>
+                                        </div>
+                                        <button id="btn-clear-context-vm-script" class="small-delete-btn"
+                                            title="Remove Context"
+                                            style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    <textarea id="vm-script-context" hidden></textarea>
                                 </div>
                                 <button id="btn-generate-script" class="primary-btn full-width"
                                     style="margin-top: 1.5rem;">
@@ -655,7 +679,8 @@
                                 </button>
                                 <div id="vm-script-output" class="script-output-container"
                                     style="flex: 1; overflow-y: auto; padding: 1rem;">
-                                    <div class="placeholder-state">
+                                    <div class="placeholder-state"
+                                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
                                         <i class="fa-solid fa-scroll"
                                             style="font-size: 3rem; color: var(--text-secondary); opacity: 0.5;"></i>
                                         <p style="margin-top: 1rem; color: var(--text-secondary);">Generated script will
@@ -668,8 +693,104 @@
                 </div>
 
                 <!-- Tab Content: Image to Video (Placeholder) -->
+                <!-- Tab Content: Image to Video -->
                 <div id="vm-img-to-video" class="tab-content">
-                    <!-- Placeholder removed -->
+                    <div style="display: flex; flex-direction: column; gap: 2rem; height: 100%;">
+
+                        <!-- Top: Context Engineering (Full Width) -->
+                        <div class="glass-panel full-width" style="padding: 0;">
+                            <button class="accordion-header" id="btn-context-accordion-vm-img">
+                                <span><i class="fa-solid fa-layer-group"></i> Context Engineering <small
+                                        class="text-muted" style="font-size: 0.8em; margin-left: 10px;">(Need to apply
+                                        the context to make use of
+                                        created context)</small></span>
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </button>
+                            <div class="accordion-content" id="context-content-vm-img" hidden>
+                                <div style="padding: 1rem;">
+                                    <!-- Context Data view moved to below prompt -->
+                                    <!-- Select All / Clear All buttons are injected here by script.js -->
+                                    <div id="context-checkboxes-vm-img"
+                                        style="display: grid; grid-template-columns: auto auto; justify-content: start; gap: 10px 40px; margin-top: 1rem;">
+                                        <!-- Checkboxes injected here -->
+                                    </div>
+                                    <button id="btn-apply-context-vm-img" class="secondary-btn small-btn"
+                                        style="margin-top: 1.5rem; white-space: nowrap; width: auto;">
+                                        Apply to Prompt
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Middle: Prompt & Controls -->
+                        <div class="glass-panel full-width" style="margin-bottom: 1rem;">
+                            <div class="creation-controls-grid">
+                                <!-- Left Column: Prompt -->
+                                <div class="input-group"
+                                    style="display: flex; flex-direction: column; height: 100%; gap: 1rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <label>Video Prompt</label>
+                                        <button id="btn-optimize-vm-img" class="icon-btn" title="Enhance with Gemini"
+                                            style="font-size: 0.9rem; color: var(--accent-color);">
+                                            <i class="fa-solid fa-wand-magic-sparkles"></i> Enhance
+                                        </button>
+                                    </div>
+                                    <textarea id="vm-img-prompt" class="large-prompt"
+                                        placeholder="Describe how the image should move or transform..."
+                                        style="flex: 1; min-height: 150px; width: 100%; resize: vertical; margin-bottom: 1rem;"></textarea>
+
+                                    <div style="flex: 1; display: flex; flex-direction: column;">
+                                        <div
+                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                            <label>Context <span id="vm-img-context-version"
+                                                    style="font-size: 0.8rem; color: var(--accent-color); margin-left: 0.5rem;"></span></label>
+                                            <button id="btn-clear-context-vm-img" class="small-delete-btn"
+                                                title="Remove Context"
+                                                style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        <textarea id="vm-img-context" class="large-prompt"
+                                            placeholder="Applied context will appear here..." readonly
+                                            style="flex: 1; min-height: 100px; width: 100%; font-size: 0.9rem; opacity: 0.8;"></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Right Column: Image Input & Generate -->
+                                <div class="creation-options">
+                                    <div class="input-group">
+                                        <label>Input Image</label>
+                                        <div class="file-upload" id="drop-zone-vm-img" style="height: 150px;">
+                                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                                            <p>Click or Drag & Drop</p>
+                                            <input type="file" id="file-input-vm-img" accept="image/*" hidden>
+                                        </div>
+                                        <div id="preview-container-vm-img" style="display: none; position: relative;">
+                                            <img id="preview-img-vm-img" src="" alt="Preview" class="preview-img"
+                                                style="max-height: 150px; width: 100%; object-fit: contain;">
+                                            <button id="btn-remove-img-vm-img" class="small-delete-btn"
+                                                style="position: absolute; top: 5px; right: 5px;">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <button id="btn-generate-vm-img" class="primary-btn full-width"
+                                        style="margin-top: auto;">
+                                        <i class="fa-solid fa-video"></i> Generate Video
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom: Output -->
+                        <div class="preview-area glass-panel full-width" style="min-height: 400px;">
+                            <div id="vm-img-result-container" class="empty-state">
+                                <i class="fa-solid fa-film"></i>
+                                <p>Generated video will appear here</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Tab Content: First/Last Frame (Placeholder) -->
@@ -1394,6 +1515,8 @@
                 style="text-align: center; margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px;">
                 <img id="info-asset-img" src="" alt="Asset Preview"
                     style="max-height: 200px; max-width: 100%; object-fit: contain;">
+                <video id="info-asset-video" controls
+                    style="max-height: 200px; max-width: 100%; display: none;"></video>
             </div>
 
             <div class="metadata-grid" style="grid-template-columns: 1fr; gap: 15px;">

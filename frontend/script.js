@@ -25,11 +25,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const img = document.getElementById('info-asset-img');
+        const video = document.getElementById('info-asset-video');
         const prompt = document.getElementById('info-prompt');
         const modelType = document.getElementById('info-model-type');
         const contextVersion = document.getElementById('info-context-version');
 
-        if (img) img.src = asset.url;
+        if (asset.type === 'video') {
+            if (img) img.style.display = 'none';
+            if (video) {
+                video.style.display = 'block';
+                video.src = asset.url;
+            }
+        } else {
+            if (video) {
+                video.style.display = 'none';
+                video.pause();
+            }
+            if (img) {
+                img.style.display = 'block';
+                img.src = asset.url;
+            }
+        }
+
         if (prompt) prompt.textContent = asset.prompt || 'No prompt saved.';
         if (modelType) modelType.textContent = asset.model_type || 'Unknown';
         if (contextVersion) contextVersion.textContent = asset.context_version || 'Not Applied';
@@ -657,8 +674,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="asset-info">
                     <span class="asset-type">${asset.type}</span>
                     <div style="display: flex; gap: 5px;">
-                        ${asset.type === 'image' ? `
+                        ${asset.type === 'image' || asset.type === 'video' ? `
                             <button class="info-btn small-btn" data-id="${asset.id}" title="Asset Info"><i class="fa-solid fa-info"></i></button>
+                        ` : ''}
+                        ${asset.type === 'image' ? `
                             <button class="edit-btn small-btn" data-id="${asset.id}" title="Edit Image"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
                         ` : ''}
                         <button class="delete-btn small-delete-btn" data-id="${asset.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
@@ -1682,6 +1701,60 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    window.saveVideoToProject = async (blobName, videoUrl, prompt, modelType, contextData, contextVersion, btnElement = null) => {
+        if (!currentProjectId) {
+            showAlert('Please select a project first.');
+            return;
+        }
+
+        let originalText = '';
+        if (btnElement) {
+            originalText = btnElement.innerHTML;
+            btnElement.disabled = true;
+            btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('project_id', currentProjectId);
+            formData.append('blob_name', blobName);
+            formData.append('prompt', prompt);
+            formData.append('model_type', modelType);
+            if (contextData) formData.append('context_data', contextData);
+            if (contextVersion) formData.append('context_version', contextVersion);
+
+            const response = await fetch('/video-creation/save', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                showAlert('Video saved to project successfully!');
+                if (btnElement) {
+                    btnElement.innerHTML = '<i class="fa-solid fa-check"></i> Saved';
+                    btnElement.classList.remove('primary-btn');
+                    btnElement.classList.add('secondary-btn');
+                }
+                // Refresh project assets if needed
+                openProject(currentProjectId);
+            } else {
+                const err = await response.json();
+                showAlert(`Failed to save video: ${err.detail || 'Unknown error'}`);
+                if (btnElement) {
+                    btnElement.innerHTML = originalText;
+                    btnElement.disabled = false;
+                }
+            }
+        } catch (error) {
+            console.error('Error saving video:', error);
+            showAlert('Failed to save video to project.');
+            if (btnElement) {
+                btnElement.innerHTML = originalText;
+                btnElement.disabled = false;
+            }
+        }
+    };
+
     if (btnGenerateImg) {
         btnGenerateImg.addEventListener('click', async () => {
             if (!currentProjectId) {
@@ -2344,9 +2417,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Set context output
                 contextOutput.value = contextText.trim();
 
-                // Update version label if present
+                // Update version label or indicator if present
                 if (versionLabel) {
-                    versionLabel.innerText = "(Applied)";
+                    if (versionLabel.type === 'checkbox') {
+                        versionLabel.checked = true;
+                        const label = document.querySelector(`label[for="${versionLabel.id}"]`);
+                        if (label) {
+                            label.innerText = "Context Applied";
+                            label.style.color = "var(--accent-color)";
+                        }
+                    } else {
+                        versionLabel.innerText = "(Applied)";
+                    }
                 }
 
                 // Visual feedback
@@ -2359,10 +2441,43 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function setupClearContextButton(btnId, textareaId, versionLabelId) {
+        const btn = document.getElementById(btnId);
+        const textarea = document.getElementById(textareaId);
+        const versionLabel = versionLabelId ? document.getElementById(versionLabelId) : null;
+
+        if (btn && textarea) {
+            btn.addEventListener('click', () => {
+                textarea.value = '';
+                if (versionLabel) {
+                    if (versionLabel.type === 'checkbox') {
+                        versionLabel.checked = false;
+                        const label = document.querySelector(`label[for="${versionLabel.id}"]`);
+                        if (label) {
+                            label.innerText = "Context not applied";
+                            label.style.color = "var(--text-secondary)";
+                        }
+                    } else {
+                        versionLabel.innerText = '';
+                    }
+                }
+            });
+        }
+    }
+
     // Initialize Context Accordions
     setupContextAccordion('btn-context-accordion-img', 'context-content-img', 'context-checkboxes-img', 'btn-apply-context-img', 'img-context', 'img-context-version');
     setupContextAccordion('btn-context-accordion-edit', 'context-content-edit', 'context-checkboxes-edit', 'btn-apply-context-edit', 'edit-context', 'edit-context-version');
     setupContextAccordion('btn-context-accordion-video', 'context-content-video', 'context-checkboxes-video', 'btn-apply-context-video', 'video-context', 'video-context-version');
+    // Initialize Context Accordion for Image to Video
+    setupContextAccordion('btn-context-accordion-vm-img', 'context-content-vm-img', 'context-checkboxes-vm-img', 'btn-apply-context-vm-img', 'vm-img-context', 'vm-img-context-version');
+
+    // Initialize Clear Context Buttons
+    setupClearContextButton('btn-clear-context-video', 'video-context', 'video-context-version');
+    setupClearContextButton('btn-clear-context-vm-img', 'vm-img-context', 'vm-img-context-version');
+    setupClearContextButton('btn-clear-context-vm-script', 'vm-script-context', 'vm-script-context-checkbox');
+    setupClearContextButton('btn-clear-context-img', 'img-context', 'img-context-version');
+    setupClearContextButton('btn-clear-context-edit', 'edit-context', 'edit-context-version');
 
     // --- Context Engineering Page Logic ---
     // --- Context Engineering Page Logic ---
@@ -3374,7 +3489,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initialize Context Accordion for Script Generation
-    setupContextAccordion('btn-context-accordion-vm-script', 'context-content-vm-script', 'context-checkboxes-vm-script', 'btn-apply-context-vm-script', 'vm-script-context', null);
+    setupContextAccordion('btn-context-accordion-vm-script', 'context-content-vm-script', 'context-checkboxes-vm-script', 'btn-apply-context-vm-script', 'vm-script-context', 'vm-script-context-checkbox');
 
     const btnGenerateScript = document.getElementById('btn-generate-script');
     const vmScriptPrompt = document.getElementById('vm-script-prompt');
@@ -3393,7 +3508,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             setLoading(btnGenerateScript, true);
             vmScriptOutput.innerHTML = `
-                <div class="loading-state">
+                <div class="loading-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
                     <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-color);"></i>
                     <p style="margin-top: 1rem;">Generating script with Gemini ...</p>
                 </div>
@@ -3514,8 +3629,11 @@ document.addEventListener('DOMContentLoaded', () => {
         scriptData.forEach((scene, index) => {
             html += `
                 <div class="script-scene">
-                    <div class="scene-header">
-                        <i class="fa-solid fa-clapperboard"></i> Scene ${index + 1}
+                    <div class="scene-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span><i class="fa-solid fa-clapperboard"></i> Scene ${index + 1}</span>
+                        <button class="icon-btn small-btn" onclick="copyScene(${index})" title="Copy Scene">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
                     </div>
                     <div class="scene-content">
                         <div class="scene-col scene-visual">
@@ -3534,4 +3652,207 @@ document.addEventListener('DOMContentLoaded', () => {
         vmScriptOutput.innerHTML = html;
     }
 
+    window.copyScene = function (index) {
+        if (!currentScriptData || !currentScriptData[index]) return;
+
+        const scene = currentScriptData[index];
+        const textToCopy = `Visual: ${scene.visual}\nAudio: ${scene.audio}`;
+
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            showAlert('Scene copied to clipboard!');
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+            showAlert('Failed to copy scene.');
+        });
+    };
+
+    // Image to Video Logic
+    const dropZoneVmImg = document.getElementById('drop-zone-vm-img');
+    const fileInputVmImg = document.getElementById('file-input-vm-img');
+    const previewContainerVmImg = document.getElementById('preview-container-vm-img');
+    const previewImgVmImg = document.getElementById('preview-img-vm-img');
+    const btnRemoveImgVmImg = document.getElementById('btn-remove-img-vm-img');
+    const vmImgPrompt = document.getElementById('vm-img-prompt');
+    const vmImgContext = document.getElementById('vm-img-context');
+    const btnGenerateVmImg = document.getElementById('btn-generate-vm-img');
+    const vmImgResultContainer = document.getElementById('vm-img-result-container');
+    const btnOptimizeVmImg = document.getElementById('btn-optimize-vm-img');
+
+    let vmImgFile = null;
+
+    if (dropZoneVmImg && fileInputVmImg) {
+        dropZoneVmImg.addEventListener('click', () => fileInputVmImg.click());
+
+        dropZoneVmImg.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZoneVmImg.style.borderColor = 'var(--accent-color)';
+            dropZoneVmImg.style.backgroundColor = 'rgba(124, 77, 255, 0.05)';
+        });
+
+        dropZoneVmImg.addEventListener('dragleave', () => {
+            dropZoneVmImg.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+            dropZoneVmImg.style.backgroundColor = 'transparent';
+        });
+
+        dropZoneVmImg.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZoneVmImg.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+            dropZoneVmImg.style.backgroundColor = 'transparent';
+            if (e.dataTransfer.files.length) {
+                handleVmImgFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInputVmImg.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleVmImgFile(e.target.files[0]);
+            }
+        });
+    }
+
+    function handleVmImgFile(file) {
+        if (!file.type.startsWith('image/')) {
+            showAlert('Please select an image file.');
+            return;
+        }
+        vmImgFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImgVmImg.src = e.target.result;
+            dropZoneVmImg.style.display = 'none';
+            previewContainerVmImg.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    if (btnRemoveImgVmImg) {
+        btnRemoveImgVmImg.addEventListener('click', (e) => {
+            e.stopPropagation();
+            vmImgFile = null;
+            fileInputVmImg.value = '';
+            previewImgVmImg.src = '';
+            previewContainerVmImg.style.display = 'none';
+            dropZoneVmImg.style.display = 'flex';
+        });
+    }
+
+    if (btnOptimizeVmImg) {
+        btnOptimizeVmImg.addEventListener('click', async () => {
+            if (!vmImgFile) {
+                showAlert('Please upload an image first to use image-aware enhancement.');
+                return;
+            }
+
+            const currentPrompt = vmImgPrompt.value;
+            if (!currentPrompt) {
+                showAlert('Please enter some initial instructions for the enhancement.');
+                return;
+            }
+
+            const originalBtnContent = btnOptimizeVmImg.innerHTML;
+            btnOptimizeVmImg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enhancing...';
+            btnOptimizeVmImg.disabled = true;
+
+            const formData = new FormData();
+            formData.append('image', vmImgFile);
+            formData.append('instructions', currentPrompt);
+
+            try {
+                const response = await fetch('/video-magic/prompt/optimize-with-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    vmImgPrompt.value = data.optimized_prompt;
+                } else {
+                    const err = await response.json();
+                    showAlert(`Error enhancing prompt: ${err.detail || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error(error);
+                showAlert(`Error enhancing prompt: ${error.message}`);
+            } finally {
+                btnOptimizeVmImg.innerHTML = originalBtnContent;
+                btnOptimizeVmImg.disabled = false;
+            }
+        });
+    }
+
+    if (btnGenerateVmImg) {
+        btnGenerateVmImg.addEventListener('click', async () => {
+            if (!vmImgFile) {
+                showAlert('Please upload an image first.');
+                return;
+            }
+            if (!vmImgPrompt.value) {
+                showAlert('Please enter a prompt.');
+                return;
+            }
+
+            setLoading(btnGenerateVmImg, true);
+            vmImgResultContainer.innerHTML = `
+                <div class="loading-state">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-color);"></i>
+                    <p style="margin-top: 1rem;">Generating video with Veo...</p>
+                </div>
+            `;
+
+            const formData = new FormData();
+            formData.append('image', vmImgFile);
+            formData.append('prompt', vmImgPrompt.value);
+            if (vmImgContext.value) {
+                formData.append('context', vmImgContext.value);
+            }
+
+            try {
+                const response = await fetch('/video-magic/image-to-video', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const videoUrl = data.video_url;
+                    const blobName = data.blob_name;
+
+                    vmImgResultContainer.innerHTML = `
+                        <div style="width: 100%; height: 100%; display: flex; flex-direction: column; gap: 1rem;">
+                            <video controls loop style="width: 100%; height: auto; max-height: 400px; border-radius: 10px;">
+                                <source src="${videoUrl}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                            <div style="display: flex; gap: 1rem;">
+                                <a href="${videoUrl}" download="generated_video.mp4" class="secondary-btn full-width" style="justify-content: center; text-decoration: none;">
+                                    <i class="fa-solid fa-download"></i> Download
+                                </a>
+                                <button class="primary-btn full-width" onclick="saveVideoToProject('${blobName}', '${videoUrl}', document.getElementById('vm-img-prompt').value, 'veo-3.1', document.getElementById('vm-img-context').value, window.activeContextVersionName || 'Custom / Draft', this)">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save to Project
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const err = await response.json();
+                    vmImgResultContainer.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa-solid fa-triangle-exclamation" style="color: #ff4d4d;"></i>
+                            <p style="color: #ff4d4d;">Error: ${err.detail || 'Generation failed'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error(error);
+                vmImgResultContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #ff4d4d;"></i>
+                        <p style="color: #ff4d4d;">Error: ${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                setLoading(btnGenerateVmImg, false);
+            }
+        });
+    }
 });
