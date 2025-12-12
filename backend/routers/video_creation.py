@@ -15,16 +15,14 @@ async def generate(
     prompt: str = Form(...),
     aspect_ratio: str = Form("16:9"),
     quality: str = Form("speed"), # speed or quality
+    num_videos: int = Form(1),
     project_id: Optional[int] = Form(None),
     db: Session = Depends(get_db)
 ):
     try:
-        blob_name = await generate_video(prompt, aspect_ratio=aspect_ratio, quality=quality)
+        results = await generate_video(prompt, aspect_ratio=aspect_ratio, quality=quality, num_videos=num_videos)
         
-        from backend.services.storage import generate_signed_url
-        video_url = generate_signed_url(blob_name)
-        
-        return {"video_url": video_url, "blob_name": blob_name}
+        return {"videos": results}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -165,6 +165,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Feature Links on Home Page
+    const featureLinks = document.querySelectorAll('.feature-link');
+    featureLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            const targetId = link.getAttribute('data-target');
+            activateSection(targetId);
+        });
+    });
+
     // --- Projects ---
     // --- Projects ---
     // Globals moved to top of file
@@ -1736,7 +1745,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     btnElement.classList.add('secondary-btn');
                 }
                 // Refresh project assets if needed
-                openProject(currentProjectId);
+                // openProject(currentProjectId); // Removed to prevent redirection
             } else {
                 const err = await response.json();
                 showAlert(`Failed to save video: ${err.detail || 'Unknown error'}`);
@@ -3315,6 +3324,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const contextCheckboxesVideo = document.getElementById('context-checkboxes-video');
     const videoContextVersion = document.getElementById('video-context-version');
     const modelToggleVideo = document.getElementById('model-toggle-video');
+    const videoCountSlider = document.getElementById('video-count-slider');
+    const videoCountDisplay = document.getElementById('video-count-display');
+
+    if (videoCountSlider && videoCountDisplay) {
+        videoCountSlider.addEventListener('input', (e) => {
+            videoCountDisplay.textContent = e.target.value;
+        });
+    }
 
 
 
@@ -3333,6 +3350,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <i class="fa-solid fa-film"></i>
                 <p>Generated video will appear here</p>
             `;
+            videoResultContainer.style.display = 'flex'; // Reset display for single placeholder
+            videoResultContainer.style.gridTemplateColumns = 'none';
         });
     }
 
@@ -3350,6 +3369,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p style="margin-top: 1rem;">Generating video... This may take a minute.</p>
                 </div>
             `;
+            videoResultContainer.style.display = 'flex'; // Ensure loading state is centered
 
             try {
                 const formData = new FormData();
@@ -3357,6 +3377,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 formData.append('prompt', fullPrompt);
                 formData.append('aspect_ratio', videoAspectRatio.value);
+
+                if (videoCountSlider) {
+                    formData.append('num_videos', videoCountSlider.value);
+                }
 
                 // Quality Selection
                 // Unchecked = Speed, Checked = Quality
@@ -3379,75 +3403,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Remove autoplay, add controls
-                    videoResultContainer.innerHTML = `
-                        <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                            <video controls style="max-width: 100%; max-height: 80vh; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                                <source src="${data.video_url}" type="video/mp4">
+                    // data.videos is expected to be a list of {video_url, blob_name}
+                    videoResultContainer.innerHTML = '';
+                    videoResultContainer.style.display = 'grid';
+                    videoResultContainer.style.gridTemplateColumns = `repeat(${data.videos.length}, 1fr)`;
+                    videoResultContainer.style.gap = '1rem';
+
+                    data.videos.forEach((video, index) => {
+                        const card = document.createElement('div');
+                        card.className = 'video-card';
+                        card.innerHTML = `
+                            <video controls style="width: 100%; border-radius: 8px; margin-bottom: 0.5rem;">
+                                <source src="${video.video_url}" type="video/mp4">
                                 Your browser does not support the video tag.
                             </video>
-                            <div style="margin-top: 1rem; display: flex; gap: 1rem;">
-                                <a href="${data.video_url}" download="generated_video.mp4" class="secondary-btn">
-                                    <i class="fa-solid fa-download"></i> Download
-                                </a>
-                                <button id="btn-save-video-project" class="primary-btn">
-                                    <i class="fa-solid fa-floppy-disk"></i> Save to Project
+                            <div class="video-actions" style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem;">
+                                <button class="action-btn" onclick="saveVideoToProject('${video.blob_name}', '${video.video_url}', document.getElementById('video-prompt').value, '${quality === 'quality' ? 'Veo 3.1 (Quality)' : 'Veo 3.1 (Speed)'}', document.getElementById('video-context').value, window.activeContextVersionName || 'Custom / Draft', this)">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save
                                 </button>
+                                <a href="${video.video_url}" download="generated_video_${index}.mp4" class="action-btn">
+                                    <i class="fa-solid fa-download"></i>
+                                </a>
                             </div>
-                        </div>
-                    `;
-
-                    // Add event listener for Save to Project
-                    const btnSaveVideoProject = document.getElementById('btn-save-video-project');
-                    if (btnSaveVideoProject) {
-                        btnSaveVideoProject.addEventListener('click', async () => {
-                            if (!currentProjectId) {
-                                showAlert('Please select a project first.');
-                                return;
-                            }
-
-                            const originalText = btnSaveVideoProject.innerHTML;
-                            btnSaveVideoProject.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
-                            btnSaveVideoProject.disabled = true;
-
-                            try {
-                                const saveFormData = new FormData();
-                                saveFormData.append('project_id', currentProjectId);
-                                saveFormData.append('blob_name', data.blob_name); // Use the blob name from response
-                                saveFormData.append('prompt', fullPrompt);
-                                saveFormData.append('model_type', quality === 'quality' ? 'Veo 3.1 (Quality)' : 'Veo 3.1 (Speed)');
-
-                                if (videoContext.value) {
-                                    saveFormData.append('context_data', videoContext.value);
-                                    if (window.activeContextVersionName) {
-                                        saveFormData.append('context_version', window.activeContextVersionName);
-                                    } else {
-                                        saveFormData.append('context_version', 'Custom / Draft');
-                                    }
-                                }
-
-                                const saveResponse = await fetch('/video-creation/save', {
-                                    method: 'POST',
-                                    body: saveFormData
-                                });
-
-                                if (saveResponse.ok) {
-                                    showAlert('Video saved to project successfully!');
-                                    btnSaveVideoProject.innerHTML = '<i class="fa-solid fa-check"></i> Saved';
-                                } else {
-                                    const saveData = await saveResponse.json();
-                                    showAlert('Failed to save video: ' + (saveData.detail || 'Unknown error'));
-                                    btnSaveVideoProject.innerHTML = originalText;
-                                    btnSaveVideoProject.disabled = false;
-                                }
-                            } catch (error) {
-                                console.error('Error saving video:', error);
-                                showAlert('An error occurred while saving.');
-                                btnSaveVideoProject.innerHTML = originalText;
-                                btnSaveVideoProject.disabled = false;
-                            }
-                        });
-                    }
+                        `;
+                        videoResultContainer.appendChild(card);
+                    });
 
                 } else {
                     videoResultContainer.innerHTML = `
@@ -3491,13 +3471,50 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Context Accordion for Script Generation
     setupContextAccordion('btn-context-accordion-vm-script', 'context-content-vm-script', 'context-checkboxes-vm-script', 'btn-apply-context-vm-script', 'vm-script-context', 'vm-script-context-checkbox');
 
-    const btnGenerateScript = document.getElementById('btn-generate-script');
+    // Script Generation Logic
     const vmScriptPrompt = document.getElementById('vm-script-prompt');
     const vmScriptContext = document.getElementById('vm-script-context');
+    const btnGenerateScript = document.getElementById('btn-generate-script');
     const vmScriptOutput = document.getElementById('vm-script-output');
     const btnEditScript = document.getElementById('btn-edit-script');
+    const btnClearScriptInputs = document.getElementById('btn-clear-script-inputs');
+    const btnClearScriptOutput = document.getElementById('btn-clear-script-output');
 
     let currentScriptData = null;
+
+    if (btnClearScriptInputs) {
+        btnClearScriptInputs.addEventListener('click', () => {
+            if (vmScriptPrompt) vmScriptPrompt.value = '';
+            if (vmScriptContext) vmScriptContext.value = '';
+
+            // Reset context UI
+            const contextCheckbox = document.getElementById('vm-script-context-checkbox');
+            const contextLabel = document.getElementById('vm-script-context-label');
+            if (contextCheckbox) {
+                contextCheckbox.checked = false;
+                contextCheckbox.disabled = true;
+            }
+            if (contextLabel) {
+                contextLabel.textContent = 'Context not applied';
+                contextLabel.style.color = 'var(--text-secondary)';
+            }
+        });
+    }
+
+    if (btnClearScriptOutput) {
+        btnClearScriptOutput.addEventListener('click', () => {
+            vmScriptOutput.innerHTML = `
+                <div class="placeholder-state"
+                    style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+                    <i class="fa-solid fa-scroll"
+                        style="font-size: 3rem; color: var(--text-secondary); opacity: 0.5;"></i>
+                    <p style="margin-top: 1rem; color: var(--text-secondary);">Generated script will appear here</p>
+                </div>
+            `;
+            if (btnEditScript) btnEditScript.hidden = true;
+            currentScriptData = null;
+        });
+    }
 
     if (btnGenerateScript) {
         btnGenerateScript.addEventListener('click', async () => {
@@ -3620,20 +3637,88 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderScript(scriptData) {
-        if (!scriptData || !Array.isArray(scriptData)) {
+        if (!scriptData) {
+            vmScriptOutput.innerHTML = '<p>Invalid script format received.</p>';
+            return;
+        }
+
+        // Handle both old format (array) and new format (object with global_elements)
+        let scenes = [];
+        let globalElements = null;
+
+        if (Array.isArray(scriptData)) {
+            scenes = scriptData;
+        } else if (scriptData.scenes) {
+            scenes = scriptData.scenes;
+            globalElements = scriptData.global_elements;
+        } else {
             vmScriptOutput.innerHTML = '<p>Invalid script format received.</p>';
             return;
         }
 
         let html = '<div class="script-container">';
-        scriptData.forEach((scene, index) => {
+
+        // Render Global Elements if available
+        if (globalElements) {
+            html += `
+                <div class="global-elements-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+            `;
+
+            const elementIcons = {
+                character: 'fa-user',
+                visual_style: 'fa-eye',
+                audio_vibe: 'fa-music',
+                costume: 'fa-shirt',
+                color_palette: 'fa-palette',
+                set_design: 'fa-couch',
+                objects_props: 'fa-box-open',
+                filming_techniques: 'fa-video',
+                voice: 'fa-microphone'
+            };
+
+            for (const [key, rawValue] of Object.entries(globalElements)) {
+                const title = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                const icon = elementIcons[key] || 'fa-star';
+
+                let value = rawValue;
+                if (typeof rawValue === 'object' && rawValue !== null) {
+                    // If it's an object, try to format it nicely or just stringify
+                    value = Object.entries(rawValue).map(([k, v]) => `${k}: ${v}`).join(', ');
+                }
+
+                html += `
+                    <div class="global-element-card" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1rem; position: relative;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <div style="display: flex; align-items: center; gap: 8px; color: var(--accent-color);">
+                                <i class="fa-solid ${icon}"></i>
+                                <strong style="font-size: 0.9rem; text-transform: uppercase;">${title}</strong>
+                            </div>
+                            <button class="icon-btn small-btn" onclick="navigator.clipboard.writeText('${String(value).replace(/'/g, "\\'")}')" title="Copy">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.4;">${value}</p>
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+        }
+
+        // Render Scenes
+        scenes.forEach((scene, index) => {
             html += `
                 <div class="script-scene">
                     <div class="scene-header" style="display: flex; justify-content: space-between; align-items: center;">
                         <span><i class="fa-solid fa-clapperboard"></i> Scene ${index + 1}</span>
-                        <button class="icon-btn small-btn" onclick="copyScene(${index})" title="Copy Scene">
-                            <i class="fa-regular fa-copy"></i>
-                        </button>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="icon-btn small-btn" onclick="makeVideoFromScene(${index})" title="Make Video">
+                                <i class="fa-solid fa-video"></i>
+                            </button>
+                            <button class="icon-btn small-btn" onclick="copyScene(${index})" title="Copy Scene">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="scene-content">
                         <div class="scene-col scene-visual">
@@ -3652,18 +3737,86 @@ document.addEventListener('DOMContentLoaded', () => {
         vmScriptOutput.innerHTML = html;
     }
 
+
     window.copyScene = function (index) {
-        if (!currentScriptData || !currentScriptData[index]) return;
+        if (!currentScriptData) return;
 
-        const scene = currentScriptData[index];
+        // Handle both data structures
+        let scene;
+        if (Array.isArray(currentScriptData)) {
+            scene = currentScriptData[index];
+        } else if (currentScriptData.scenes) {
+            scene = currentScriptData.scenes[index];
+        } else {
+            return;
+        }
+
+        if (!scene) return;
+
         const textToCopy = `Visual: ${scene.visual}\nAudio: ${scene.audio}`;
-
         navigator.clipboard.writeText(textToCopy).then(() => {
             showAlert('Scene copied to clipboard!');
         }).catch(err => {
-            console.error('Failed to copy text: ', err);
+            console.error('Failed to copy scene:', err);
             showAlert('Failed to copy scene.');
         });
+    };
+
+    window.makeVideoFromScene = function (index) {
+        if (!currentScriptData) return;
+
+        // Handle both data structures
+        let scene;
+        let globalElements = null;
+
+        if (Array.isArray(currentScriptData)) {
+            scene = currentScriptData[index];
+        } else if (currentScriptData.scenes) {
+            scene = currentScriptData.scenes[index];
+            globalElements = currentScriptData.global_elements;
+        } else {
+            return;
+        }
+
+        if (!scene) return;
+
+        // Construct the prompt
+        let prompt = "";
+
+        if (globalElements) {
+            prompt += "Global Context:\n";
+            for (const [key, value] of Object.entries(globalElements)) {
+                const title = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                prompt += `- ${title}: ${value}\n`;
+            }
+            prompt += "\n";
+        }
+
+        prompt += `Scene Visual: ${scene.visual}\n`;
+        prompt += `Scene Audio: ${scene.audio}`;
+
+        // Populate Video Creation Prompt
+        const videoPrompt = document.getElementById('video-prompt');
+        if (videoPrompt) {
+            videoPrompt.value = prompt;
+        }
+
+        // Switch to Video Creation Tab
+        // We need to trigger the tab click for 'video-creation'
+        // But 'video-creation' is a top-level section, not a tab within Video Magic.
+        // It's the "Video Creation" link in the sidebar.
+        const videoCreationLink = document.querySelector('.nav-links li[data-target="video-creation"]');
+        if (videoCreationLink) {
+            videoCreationLink.click();
+        }
+
+        // Scroll to prompt
+        if (videoPrompt) {
+            setTimeout(() => {
+                videoPrompt.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                videoPrompt.focus();
+            }, 300); // Wait for section transition
+        }
     };
 
     // Image to Video Logic
@@ -3677,6 +3830,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnGenerateVmImg = document.getElementById('btn-generate-vm-img');
     const vmImgResultContainer = document.getElementById('vm-img-result-container');
     const btnOptimizeVmImg = document.getElementById('btn-optimize-vm-img');
+    const vmImgCountSlider = document.getElementById('vm-img-count-slider');
+    const vmImgCountDisplay = document.getElementById('vm-img-count-display');
+
+    if (vmImgCountSlider && vmImgCountDisplay) {
+        vmImgCountSlider.addEventListener('input', (e) => {
+            vmImgCountDisplay.textContent = e.target.value;
+        });
+    }
 
     let vmImgFile = null;
 
@@ -3768,11 +3929,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     vmImgPrompt.value = data.optimized_prompt;
                 } else {
                     const err = await response.json();
-                    showAlert(`Error enhancing prompt: ${err.detail || 'Unknown error'}`);
+                    showAlert(`Error enhancing prompt: ${err.detail || 'Unknown error'} `);
                 }
             } catch (error) {
                 console.error(error);
-                showAlert(`Error enhancing prompt: ${error.message}`);
+                showAlert(`Error enhancing prompt: ${error.message} `);
             } finally {
                 btnOptimizeVmImg.innerHTML = originalBtnContent;
                 btnOptimizeVmImg.disabled = false;
@@ -3793,17 +3954,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
             setLoading(btnGenerateVmImg, true);
             vmImgResultContainer.innerHTML = `
-                <div class="loading-state">
+        < div class="loading-state" >
                     <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-color);"></i>
                     <p style="margin-top: 1rem;">Generating video with Veo...</p>
-                </div>
-            `;
+                </div >
+        `;
 
             const formData = new FormData();
             formData.append('image', vmImgFile);
             formData.append('prompt', vmImgPrompt.value);
             if (vmImgContext.value) {
                 formData.append('context', vmImgContext.value);
+            }
+            if (vmImgCountSlider) {
+                formData.append('num_videos', vmImgCountSlider.value);
             }
 
             try {
@@ -3814,42 +3978,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (response.ok) {
                     const data = await response.json();
-                    const videoUrl = data.video_url;
-                    const blobName = data.blob_name;
+                    // data.videos is expected to be a list of {video_url, blob_name}
 
-                    vmImgResultContainer.innerHTML = `
-                        <div style="width: 100%; height: 100%; display: flex; flex-direction: column; gap: 1rem;">
-                            <video controls loop style="width: 100%; height: auto; max-height: 400px; border-radius: 10px;">
-                                <source src="${videoUrl}" type="video/mp4">
+                    vmImgResultContainer.innerHTML = '';
+                    vmImgResultContainer.style.display = 'grid';
+                    vmImgResultContainer.style.gridTemplateColumns = `repeat(${data.videos.length}, 1fr)`;
+                    vmImgResultContainer.style.gap = '1rem';
+
+                    data.videos.forEach((video, index) => {
+                        const card = document.createElement('div');
+                        card.className = 'video-card';
+                        card.innerHTML = `
+        < video controls style = "width: 100%; border-radius: 8px; margin-bottom: 0.5rem;" >
+                                <source src="${video.video_url}" type="video/mp4">
                                 Your browser does not support the video tag.
                             </video>
-                            <div style="display: flex; gap: 1rem;">
-                                <a href="${videoUrl}" download="generated_video.mp4" class="secondary-btn full-width" style="justify-content: center; text-decoration: none;">
-                                    <i class="fa-solid fa-download"></i> Download
-                                </a>
-                                <button class="primary-btn full-width" onclick="saveVideoToProject('${blobName}', '${videoUrl}', document.getElementById('vm-img-prompt').value, 'veo-3.1', document.getElementById('vm-img-context').value, window.activeContextVersionName || 'Custom / Draft', this)">
-                                    <i class="fa-solid fa-floppy-disk"></i> Save to Project
+                            <div class="video-actions" style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem;">
+                                <button class="action-btn" onclick="saveVideoToProject('${video.blob_name}', '${video.video_url}', document.getElementById('vm-img-prompt').value, 'veo-3.1', document.getElementById('vm-img-context').value, window.activeContextVersionName || 'Custom / Draft', this)">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save
                                 </button>
+                                <a href="${video.video_url}" download="generated-video-${index}.mp4" class="action-btn">
+                                    <i class="fa-solid fa-download"></i>
+                                </a>
                             </div>
-                        </div>
-                    `;
+    `;
+                        vmImgResultContainer.appendChild(card);
+                    });
                 } else {
                     const err = await response.json();
                     vmImgResultContainer.innerHTML = `
-                        <div class="empty-state">
+        < div class="empty-state" >
                             <i class="fa-solid fa-triangle-exclamation" style="color: #ff4d4d;"></i>
                             <p style="color: #ff4d4d;">Error: ${err.detail || 'Generation failed'}</p>
-                        </div>
-                    `;
+                        </div >
+        `;
                 }
             } catch (error) {
                 console.error(error);
                 vmImgResultContainer.innerHTML = `
-                    <div class="empty-state">
+        < div class="empty-state" >
                         <i class="fa-solid fa-triangle-exclamation" style="color: #ff4d4d;"></i>
                         <p style="color: #ff4d4d;">Error: ${error.message}</p>
-                    </div>
-                `;
+                    </div >
+        `;
             } finally {
                 setLoading(btnGenerateVmImg, false);
             }

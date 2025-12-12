@@ -36,12 +36,14 @@ async def edit_video_script(request: EditScriptRequest):
 async def generate_image_to_video_endpoint(
     image: UploadFile = File(...),
     prompt: str = Form(...),
-    context: Optional[str] = Form(None)
+    context: Optional[str] = Form(None),
+    num_videos: int = Form(1)
 ):
     try:
         from backend.services.video_magic import generate_image_to_video
-        result = await generate_image_to_video(image, prompt, context)
-        return result
+        # Returns list of {video_url, blob_name}
+        results = await generate_image_to_video(image, prompt, context, num_videos)
+        return {"videos": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
