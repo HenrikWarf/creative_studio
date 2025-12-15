@@ -10,6 +10,40 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentProjectAssets = []; // Store assets for lightbox
     let currentLightboxIndex = 0;
 
+    // Theme Toggle Logic
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const body = document.body;
+
+    // Check saved theme
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        body.classList.add('light-mode');
+        updateToggleIcon(true);
+    }
+
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            body.classList.toggle('light-mode');
+            const isLight = body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            updateToggleIcon(isLight);
+        });
+    }
+
+    function updateToggleIcon(isLight) {
+        if (!themeToggleBtn) return;
+        const icon = themeToggleBtn.querySelector('i');
+        const text = themeToggleBtn.querySelector('span');
+
+        if (isLight) {
+            icon.className = 'fa-solid fa-sun';
+            text.textContent = 'Light Mode';
+        } else {
+            icon.className = 'fa-solid fa-moon';
+            text.textContent = 'Dark Mode';
+        }
+    }
+
     // Define globally to ensure availability
     window.openAssetInfoModal = function (assetId) {
         const asset = currentProjectAssets.find(a => a.id === assetId);

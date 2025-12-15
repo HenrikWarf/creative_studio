@@ -217,6 +217,9 @@ async def generate_script(prompt: str, context: str = None) -> List[Dict[str, st
     
     User Prompt: {prompt}
     
+    Constraints:
+    - Each scene MUST be exactly 8 seconds long. Keep the action and dialogue distinct and concise to fit this duration.
+    
     """
     
     if context:

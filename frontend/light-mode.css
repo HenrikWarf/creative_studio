@@ -1,0 +1,292 @@
+/* Light Mode Overrides */
+body.light-mode {
+    --bg-color: #f0f2f5;
+    --sidebar-bg: #ffffff;
+    --panel-bg: rgba(255, 255, 255, 0.85);
+    /* --accent-color: #7c4dff; Keep accent or darken slightly? Keep for now */
+    --text-primary: #1a1a2e;
+    --text-secondary: #666677;
+    --text-highlight: #c5a300;
+    /* Darker gold */
+    --border-color: rgba(0, 0, 0, 0.1);
+    --glass-border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .content-area {
+    background: radial-gradient(circle at top right, #e0e5ff 0%, var(--bg-color) 40%);
+}
+
+/* Override hardcoded input styles */
+body.light-mode textarea,
+body.light-mode select,
+body.light-mode input {
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: var(--text-primary);
+}
+
+body.light-mode .nav-links li:not(.active):hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .glass-panel {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .feature-item {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .feature-item:hover {
+    background: #f8f9fa;
+    border-color: var(--accent-color);
+}
+
+body.light-mode .upload-card {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .project-card {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .project-card:hover {
+    background: #f8f8f8;
+}
+
+body.light-mode .secondary-btn {
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    color: var(--text-secondary);
+}
+
+body.light-mode .secondary-btn:hover {
+    background-color: #f0f0f0;
+    color: var(--text-primary);
+    border-color: var(--accent-color);
+}
+
+body.light-mode .file-upload {
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+body.light-mode .asset-info {
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.7));
+    color: var(--text-primary);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .asset-info .asset-type {
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* --- Refinements --- */
+
+/* Fix H3 Visibility (Features, Grid items) */
+body.light-mode h1,
+body.light-mode h2,
+body.light-mode h3 {
+    color: var(--text-primary);
+}
+
+/* Hero text gradient fix - ensure it's visible or uses accent */
+body.light-mode .hero-content h1 {
+    background: linear-gradient(45deg, var(--accent-color), #4a00e0);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Feature Item Headers */
+body.light-mode .feature-item h3 {
+    color: var(--text-primary);
+}
+
+/* Primary Button - Force White Text */
+body.light-mode .primary-btn {
+    color: white !important;
+    background-color: var(--accent-color);
+    box-shadow: 0 4px 10px rgba(124, 77, 255, 0.3);
+}
+
+body.light-mode .primary-btn:hover {
+    background-color: var(--accent-hover);
+    color: white !important;
+}
+
+/* Accordion Header */
+body.light-mode .accordion-header {
+    background: transparent;
+    color: var(--text-primary);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .accordion-header:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+/* Accordion Content */
+body.light-mode .accordion-content {
+    background: rgba(255, 255, 255, 0.5);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Small Buttons (Delete/Info) adjustments */
+body.light-mode .small-bg-btn {
+    /* If we have specific small buttons with background issues */
+    color: var(--text-secondary);
+}
+
+/* Preview Section (Project Details) */
+body.light-mode .preview-container {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .preview-section {
+    background: #ffffff;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .preview-section-title {
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .preview-label {
+    color: var(--accent-color);
+}
+
+body.light-mode .preview-value {
+    color: var(--text-primary);
+}
+
+body.light-mode .insight-section {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .insight-suggestion {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+}
+
+body.light-mode .suggestion-text {
+    color: var(--text-primary);
+}
+
+body.light-mode .suggestion-impact {
+    color: var(--text-secondary);
+}
+
+/* Text Muted Override */
+body.light-mode .text-muted {
+    color: var(--text-primary) !important;
+}
+
+/* Sidebar Project Display Visibility */
+body.light-mode .sidebar-project {
+    color: var(--text-primary);
+    background: rgba(124, 77, 255, 0.05);
+    /* Lighter purple background */
+    border-color: rgba(124, 77, 255, 0.3);
+}
+
+body.light-mode .sidebar-project span {
+    color: var(--text-primary);
+}
+
+/* Tab Buttons Container */
+body.light-mode .tab-buttons {
+    background: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 0;
+}
+
+body.light-mode .tab-btn {
+    color: var(--text-secondary);
+    background: transparent;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+}
+
+body.light-mode .tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(0, 0, 0, 0.02);
+}
+
+body.light-mode .tab-btn.active {
+    color: var(--accent-color);
+    background: transparent;
+    box-shadow: none;
+    border-bottom: 2px solid var(--accent-color);
+}
+
+/* Select Button (Active) Styles */
+body.light-mode .select-btn.active {
+    color: white !important;
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+body.light-mode .select-btn.active:hover {
+    color: var(--text-primary) !important;
+    background-color: transparent !important;
+    border-color: var(--accent-color);
+}
+
+/* Select Button (Inactive) Styles */
+body.light-mode .select-btn:not(.active) {
+    color: var(--text-secondary);
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+body.light-mode .select-btn:not(.active):hover {
+    color: var(--text-secondary);
+    /* Keep text color same on hover */
+    background-color: rgba(0, 0, 0, 0.05);
+    /* Slight background on hover */
+    border-color: var(--accent-color);
+}
+
+/* Global Element Card (Script Generation) */
+body.light-mode .global-element-card {
+    border-color: var(--accent-color);
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Video Actions Buttons Hover */
+body.light-mode .video-actions .action-btn:hover {
+    color: var(--accent-color);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* Modal Styles */
+body.light-mode .modal-content {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    color: var(--text-primary);
+}
+
+body.light-mode .close-modal {
+    color: var(--text-secondary);
+}
+
+body.light-mode .close-modal:hover {
+    color: var(--text-primary);
+}
+
+body.light-mode .modal-header h2 {
+    color: var(--text-primary);
+}
