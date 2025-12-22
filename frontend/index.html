@@ -618,6 +618,7 @@
                 <div class="tabs" style="margin-bottom: 2rem;">
                     <button class="tab-btn active" data-tab="vm-script">Script Generation</button>
                     <button class="tab-btn" data-tab="vm-img-to-video">Image to Video</button>
+                    <button class="tab-btn" data-tab="vm-product-motion">Product Motion</button>
                     <button class="tab-btn" data-tab="vm-first-last">First/Last Frame</button>
                 </div>
 
@@ -832,6 +833,112 @@
                                 <p>Generated video will appear here</p>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Product Motion -->
+                <div id="vm-product-motion" class="tab-content">
+                    <div class="content-section" style="max-width: 800px; margin: 0 auto; padding: 2rem;">
+
+                        <!-- Step 1: Upload -->
+                        <div class="step-section" style="margin-bottom: 2rem;">
+                            <h3><span class="step-number">1.</span> Upload Product Image</h3>
+                            <div class="upload-area" id="vm-product-upload-area"
+                                style="border: 2px dashed var(--border-color); padding: 2rem; text-align: center; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">
+                                <i class="fa-solid fa-cloud-arrow-up"
+                                    style="font-size: 2rem; margin-bottom: 1rem; color: var(--text-secondary);"></i>
+                                <p style="margin: 0;">Drop product image or click to upload</p>
+                                <input type="file" id="vm-product-file-input" hidden accept="image/*">
+                            </div>
+                            <div id="vm-product-preview-container" class="preview-container"
+                                style="display: none; margin-top: 1rem; text-align: center;">
+                                <!-- Preview image will be inserted here -->
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Use Case -->
+                        <div class="step-section" style="margin-bottom: 2rem;">
+                            <h3><span class="step-number">2.</span> Select Use Case</h3>
+                            <div class="form-group">
+                                <label for="vm-product-use-case">Motion Type</label>
+                                <select id="vm-product-use-case" class="input-field"
+                                    style="width: 100%; padding: 0.8rem; border-radius: 6px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                                    <option value="" disabled selected>Select a use case...</option>
+                                    <option value="product-image-motion">Product Image Motion</option>
+                                    <option value="studio-photography-motion">Studio Photography Motion</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Analyze & Prompt -->
+                        <div class="step-section" style="margin-bottom: 2rem;">
+                            <h3><span class="step-number">3.</span> Analyze & Generate Prompt</h3>
+                            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                                AI will analyze your image and generate a motion prompt based on the selected use case.
+                            </p>
+                            <button id="btn-analyze-vm-product" class="action-btn"
+                                style="width: 100%; margin-bottom: 1.5rem; padding: 1rem; background: var(--accent-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Analyze & Generate Prompt
+                            </button>
+
+                            <div class="form-group">
+                                <label for="vm-product-prompt">Generated Prompt (Editable)</label>
+                                <textarea id="vm-product-prompt" class="input-field" rows="4"
+                                    placeholder="Prompt will appear here..."
+                                    style="width: 100%; padding: 0.8rem; border-radius: 6px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); resize: vertical;"></textarea>
+                            </div>
+
+                            <!-- Context Engineering Accordion -->
+                            <div style="margin-top: 1rem;">
+                                <button id="btn-context-accordion-vm-product" class="accordion input-field"
+                                    style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0.8rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); cursor: pointer;">
+                                    <span><i class="fa-solid fa-layer-group"></i> Context Engineering (Optional)</span>
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <span id="vm-product-context-version"
+                                            style="font-size: 0.8rem; color: var(--accent-color);"></span>
+                                        <i class="fa-solid fa-chevron-down"></i>
+                                    </div>
+                                </button>
+                                <div id="context-content-vm-product" class="panel"
+                                    style="display: none; padding: 1rem; border: 1px solid var(--border-color); border-top: none; border-radius: 0 0 6px 6px; background: var(--bg-secondary);">
+                                    <div class="context-selection-area">
+                                        <!-- Checkboxes injected by JS -->
+                                        <div id="context-checkboxes-vm-product" style="margin-bottom: 1rem;"></div>
+                                        <button id="btn-apply-context-vm-product" class="action-btn small-btn"
+                                            style="width: 100%;">Apply Context</button>
+                                    </div>
+                                    <textarea id="vm-product-context" class="input-field" rows="3"
+                                        placeholder="Context data..." readonly
+                                        style="margin-top: 0.5rem; width: 100%; display: none;"></textarea>
+                                    <button id="btn-clear-context-vm-product" class="text-btn"
+                                        style="color: var(--error-color); font-size: 0.8rem; margin-top: 0.5rem; background: none; border: none; cursor: pointer;">Clear
+                                        Context</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Generate -->
+                        <div class="step-section">
+                            <h3><span class="step-number">4.</span> Generate Video</h3>
+                            <div class="form-group" style="margin-bottom: 1.5rem;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <label for="vm-product-count-slider">Number of Videos</label>
+                                    <span id="vm-product-count-display"
+                                        style="color: var(--accent-color); font-weight: bold;">1</span>
+                                </div>
+                                <input type="range" id="vm-product-count-slider" min="1" max="3" value="1"
+                                    style="width: 100%; cursor: pointer;">
+                            </div>
+
+                            <button id="btn-generate-vm-product" class="primary-btn"
+                                style="width: 100%; padding: 1rem; font-size: 1.1rem;">
+                                <i class="fa-solid fa-video"></i> Generate Product Video
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="vm-product-result-container" class="result-container" style="margin-top: 2rem;">
+                        <!-- Video results -->
                     </div>
                 </div>
 

@@ -69,22 +69,33 @@ async def generate_image_to_video(image: UploadFile, prompt: str, context: str =
                 config_params["output_gcs_uri"] = output_gcs_uri
                 print(f"DEBUG: Using output_gcs_uri: {output_gcs_uri}")
 
-            operation = client.models.generate_videos(
-                model="veo-3.1-generate-preview",
-                prompt=full_prompt,
-                image=types.Image(
-                    image_bytes=image_bytes,
-                    mime_type=image.content_type
-                ),
-                config=types.GenerateVideosConfig(**config_params),
-            )
+            # Get the running loop
+            loop = asyncio.get_running_loop()
+
+            # Wrap the blocking call in run_in_executor
+            def call_generate_videos():
+                return client.models.generate_videos(
+                    model="veo-3.1-generate-preview",
+                    prompt=full_prompt,
+                    image=types.Image(
+                        gcs_uri=input_gcs_uri,
+                        mime_type=image.content_type
+                    ) if os.getenv("GOOGLE_GENAI_USE_VERTEXAI") == "True" else types.Image(
+                        image_bytes=image_bytes,
+                        mime_type=image.content_type
+                    ),
+                    config=types.GenerateVideosConfig(**config_params),
+                )
+
+            operation = await loop.run_in_executor(None, call_generate_videos)
 
             print("DEBUG: Video generation started. Waiting for completion...")
             
             # 4. Poll for completion
             while not operation.done:
                 await asyncio.sleep(10) # Async sleep
-                operation = client.operations.get(operation)
+                # Wrap polling in run_in_executor
+                operation = await loop.run_in_executor(None, lambda: client.operations.get(operation))
                 print("DEBUG: Waiting for video generation...")
 
             if operation.error:

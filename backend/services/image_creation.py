@@ -10,12 +10,12 @@ from backend.services.storage import upload_bytes
 from backend import models
 from sqlalchemy.orm import Session
 
-def get_client():
+def get_client(location=None):
     if os.getenv("GOOGLE_GENAI_USE_VERTEXAI") == "True":
         return genai.Client(
             vertexai=True,
             project=os.getenv("GOOGLE_CLOUD_PROJECT"),
-            location=os.getenv("GOOGLE_CLOUD_LOCATION")
+            location=location or os.getenv("GOOGLE_CLOUD_LOCATION")
         )
     else:
         api_key = os.getenv("GEMINI_API_KEY")
@@ -76,11 +76,35 @@ async def generate_image(
     # Loop for multiple images
     for _ in range(num_images):
         try:
-            client = get_client()
+            current_model_name = model_name
+            client_location = None
+            
+            # Gemini 3 Preview specific logic
+            if model_name == "gemini-3-pro-image-preview":
+                current_model_name = "publishers/google/models/gemini-3-pro-image-preview"
+                client_location = "global"
+
+            client = get_client(location=client_location)
+            
+            # Configuration
+            config = None
+            if model_name == "gemini-3-pro-image-preview":
+                 config = types.GenerateContentConfig(
+                    temperature=1,
+                    top_p=0.95,
+                    max_output_tokens=32768,
+                    response_modalities=["TEXT", "IMAGE"],
+                    image_config=types.ImageConfig(
+                        aspect_ratio="1:1", # Default to 1:1 or logic to infer from prompt? User snippet hardcodes 1:1
+                        image_size="1K",
+                        output_mime_type="image/png",
+                    )
+                 )
+            
             response = client.models.generate_content(
-                model=model_name,
+                model=current_model_name,
                 contents=contents,
-                # config=... # Add generation config if needed
+                config=config
             )
             
             print(f"DEBUG: Response candidates: {response.candidates}")
@@ -123,10 +147,11 @@ async def edit_image(
     instruction: str,
     style: Optional[str] = None,
     reference_images: Optional[List[UploadFile]] = None,
-    model_name: str = "gemini-2.5-flash-image"
-) -> str:
+    model_name: str = "gemini-2.5-flash-image",
+    num_images: int = 1
+) -> List[str]:
     """
-    Edits an existing image based on instructions. Returns Base64 string.
+    Edits an existing image based on instructions. Returns List of Base64 strings.
     """
     try:
         full_instruction = instruction
@@ -160,10 +185,35 @@ async def edit_image(
     
         for _ in range(num_images):
             try:
-                client = get_client()
+                current_model_name = model_name
+                client_location = None
+
+                # Gemini 3 Preview specific logic
+                if model_name == "gemini-3-pro-image-preview":
+                    current_model_name = "publishers/google/models/gemini-3-pro-image-preview"
+                    client_location = "global"
+
+                client = get_client(location=client_location)
+
+                # Configuration for Gemini 3 support
+                config = None
+                if model_name == "gemini-3-pro-image-preview":
+                        config = types.GenerateContentConfig(
+                        temperature=1,
+                        top_p=0.95,
+                        max_output_tokens=32768,
+                        response_modalities=["TEXT", "IMAGE"],
+                        image_config=types.ImageConfig(
+                            aspect_ratio="1:1",
+                            image_size="1K",
+                            output_mime_type="image/png",
+                        )
+                        )
+
                 response = client.models.generate_content(
-                    model=model_name,
-                    contents=contents
+                    model=current_model_name,
+                    contents=contents,
+                    config=config
                 )
                 
                 print(f"DEBUG: Edit Response: {response}")

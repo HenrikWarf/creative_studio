@@ -51,18 +51,26 @@ async def generate_video(prompt: str, aspect_ratio: str = "16:9", quality: str =
                 config_params["output_gcs_uri"] = output_gcs_uri
                 print(f"DEBUG: Using output_gcs_uri: {output_gcs_uri}")
 
-            operation = client.models.generate_videos(
-                model=model_name,
-                prompt=prompt,
-                config=GenerateVideosConfig(**config_params),
-            )
+            # Get the running loop
+            loop = asyncio.get_running_loop()
+
+            # Wrap blocking call
+            def call_generate_videos():
+                return client.models.generate_videos(
+                    model=model_name,
+                    prompt=prompt,
+                    config=GenerateVideosConfig(**config_params),
+                )
+
+            operation = await loop.run_in_executor(None, call_generate_videos)
 
             print("DEBUG: Video generation started. Waiting for completion...")
             
             # Poll for completion
             while not operation.done:
                 await asyncio.sleep(10)
-                operation = client.operations.get(operation)
+                # Wrap blocking call
+                operation = await loop.run_in_executor(None, lambda: client.operations.get(operation))
                 print("DEBUG: Waiting for video generation...")
 
             if operation.error:

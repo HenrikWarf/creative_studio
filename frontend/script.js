@@ -1,4 +1,20 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Shared Helper: Convert Base64 to Blob
+    const base64ToBlob = (b64Data, contentType = '', sliceSize = 512) => {
+        const byteCharacters = atob(b64Data);
+        const byteArrays = [];
+        for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+            const slice = byteCharacters.slice(offset, offset + sliceSize);
+            const byteNumbers = new Array(slice.length);
+            for (let i = 0; i < slice.length; i++) {
+                byteNumbers[i] = slice.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            byteArrays.push(byteArray);
+        }
+        return new Blob(byteArrays, { type: contentType });
+    };
+
     // Navigation
     // Navigation & Init
     const navLinks = document.querySelectorAll('.nav-links li');
@@ -1377,7 +1393,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('instruction', fullInstruction);
 
                 // Model Selection
-                const modelName = modelToggle && modelToggle.checked ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
+                const modelToggleEdit = document.getElementById('model-toggle-edit-page');
+                const modelName = modelToggleEdit && modelToggleEdit.checked ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
                 formData.append('model_name', modelName);
 
                 if (editCountSlider) formData.append('num_images', editCountSlider.value);
@@ -1395,8 +1412,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     editResultContainer.style.gridTemplateColumns = `repeat(${data.images.length}, 1fr)`;
                     editResultContainer.style.gap = '1rem';
 
+
+
                     data.images.forEach((b64, index) => {
-                        const newImageSrc = `data:image/png;base64,${b64}`;
+                        const blob = base64ToBlob(b64, 'image/png');
+                        const newImageSrc = URL.createObjectURL(blob);
+
                         const card = document.createElement('div');
                         card.className = 'image-card';
                         card.innerHTML = `
@@ -1534,12 +1555,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
 
                 if (response.ok) {
-                    const newImageSrc = `data:image/png;base64,${data.image_data}`;
-                    currentEditImageSrc = newImageSrc;
-                    editMainImg.src = newImageSrc;
-                    editHistory.unshift(newImageSrc); // Add to top
-                    renderEditHistory();
-                    editInstruction.value = ''; // Clear instruction
+                    // Fix: Endpoint returns {images: [b64, ...]}, not image_data
+                    // Also use Blob URL for performance/reliability with large images
+                    const b64 = data.images && data.images.length > 0 ? data.images[0] : null;
+
+                    if (b64) {
+                        const blob = base64ToBlob(b64, 'image/png');
+                        const newImageSrc = URL.createObjectURL(blob);
+
+                        currentEditImageSrc = newImageSrc;
+                        editMainImg.src = newImageSrc;
+                        editHistory.unshift(newImageSrc); // Add to top
+                        renderEditHistory();
+                        editInstruction.value = ''; // Clear instruction
+                    } else {
+                        showAlert('No image returned from edit');
+                    }
                     document.getElementById('edit-style-modal').value = ''; // Clear style
                 } else {
                     showAlert('Error: ' + data.detail);
@@ -1707,12 +1738,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 payload.context_version = '';
             }
 
-            if (imageSrc.startsWith('http')) {
-                // It's a URL, send as image_url
+            if (imageSrc.startsWith('http') && !imageSrc.startsWith('blob:')) {
+                // It's a standard URL, send as image_url
                 payload.image_url = imageSrc;
             } else if (imageSrc.startsWith('data:image')) {
                 // It's base64
                 payload.image_data = imageSrc.split(',')[1];
+            } else if (imageSrc.startsWith('blob:')) {
+                // It's a Blob URL, fetch it and convert to base64
+                // Fetch the blob
+                const blobResp = await fetch(imageSrc);
+                const blob = await blobResp.blob();
+
+                // Convert blob to base64
+                const reader = new FileReader();
+                const b64Promise = new Promise((resolve, reject) => {
+                    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = reject;
+                });
+                reader.readAsDataURL(blob);
+                const b64Data = await b64Promise;
+                payload.image_data = b64Data;
             } else {
                 showAlert('Invalid image source format');
                 return;
@@ -1858,6 +1904,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     imgResultContainer.style.display = 'grid';
                     imgResultContainer.style.gridTemplateColumns = `repeat(${data.images.length}, 1fr)`;
                     imgResultContainer.style.gap = '1rem';
+
+                    // Convert URLs (if they are URLs) or use them. 
+                    // Wait, generate_image returns SIGNED URLs (http).
+                    // So we don't need base64ToBlob for generate_image unless backend changed.
+                    // Backend returns: {"images": [signed_url, ...]}
+                    // So `url` IS a string starting with http.
 
                     data.images.forEach((url, index) => {
                         const card = document.createElement('div');
@@ -3975,6 +4027,287 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+
+    const btnGenerateVmProduct = document.getElementById('btn-generate-vm-product');
+    const vmProductPrompt = document.getElementById('vm-product-prompt');
+    const vmProductUseCase = document.getElementById('vm-product-use-case');
+    const vmProductUploadArea = document.getElementById('vm-product-upload-area');
+    const vmProductFileInput = document.getElementById('vm-product-file-input');
+    const vmProductPreviewContainer = document.getElementById('vm-product-preview-container');
+    const vmProductResultContainer = document.getElementById('vm-product-result-container');
+    const vmProductCountSlider = document.getElementById('vm-product-count-slider');
+    const vmProductCountDisplay = document.getElementById('vm-product-count-display');
+    const btnAnalyzeVmProduct = document.getElementById('btn-analyze-vm-product'); // New Analyze Button
+    const vmProductContext = document.getElementById('vm-product-context');
+    const btnClearContextVmProduct = document.getElementById('btn-clear-context-vm-product');
+
+    // Use Case Instructions Mapping
+    const PRODUCT_USE_CASE_INSTRUCTIONS = {
+        'product-image-motion': `
+**ROLE:**
+You are an expert AI Video Prompt Director specialized in high-end Fashion E-commerce. Your goal is to analyze a static product image and write a highly technical text-to-video prompt that will generate a cinematic video of that product.
+
+**INPUT ANALYSIS:**
+Analyze the uploaded image for:
+1. **Product Type:** (e.g., Sneaker, Handbag, Trench Coat).
+2. **Material Physics:** Determine the fabric weight and texture (e.g., Stiff Leather = rigid motion; Silk/Satin = fluid ripples; Denim = heavy structure).
+3. **Lighting Setup:** Identify the current light source (Softbox, Hard light, Rim light).
+
+**PROMPT GENERATION RULES:**
+Based on your analysis, construct a prompt using this specific formula:
+\`[Camera Movement] + [Subject Description with Material Emphasis] + [Lighting Action] + [Technical Keywords]\`
+
+**GUIDELINES FOR MOTION (STRICT):**
+* **NO HUMANS:** Never imply a model is wearing the item. The item is on a ghost mannequin, flat lay, or hanging.
+* **CAMERA DRIVEN:** Since the object is static, motion must come from the camera (Orbit, Slow Pan, Rack Focus) or the Lighting (Light sweep, Reflection shift).
+* **MATERIAL ADJECTIVES:**
+    * If **Shiny/Glossy:** Use words like "specular highlights," "light refraction," "shimmering."
+    * If **Soft/Fabric:** Use words like "soft texture," "micro-fiber detail," "gentle sway."
+    * If **Rigid/Structured:** Use words like "solid form," "high-contrast geometry," "stationary."
+
+**OUTPUT FORMAT:**
+Provide only the final prompt text, ready for copy-pasting.
+
+**EXAMPLE LOGIC:**
+* *Image is a Leather Bag:* Prompt should focus on "Light sweeping across the grain" and "Slow orbit."
+* *Image is a Silk Scarf:* Prompt should focus on "Gentle breeze" and "Rippling fabric."
+
+**YOUR TASK:**
+Look at the attached image and generate the perfect video generation prompt following these constraints.
+`,
+        'studio-photography-motion': `
+**ROLE:**
+You are a Lead Commercial Photographer and AI Prompt Engineer specialized in High-End E-commerce and Catalog Photography. Your task is to analyze an uploaded product reference and generate a precise text-to-image prompt to recreate that product in a pristine, white-background studio setting.
+
+**INPUT ANALYSIS:**
+Analyze the uploaded image for:
+1.  **Product Identity:** Exact item type, cut, and fit (e.g., Oversized Hoodie, Slim-fit Trousers).
+2.  **Material & Texture:** Identify the fabric (e.g., Heavyweight Cotton, Glossy Leather, Sheer Chiffon) to ensure the prompt captures the tactile quality.
+3.  **Color Palette:** Identify the exact color name and tone.
+
+**PROMPT GENERATION FORMULA:**
+Construct the prompt using this structure:
+\`[Subject Description] + [Background Specs] + [Lighting Setup] + [Camera & Technical Specs]\`
+
+**DETAILED GUIDELINES:**
+
+**1. The Subject (The Product):**
+* Describe the item in high detail (stitching, zippers, texture).
+* **Ghost Mannequin/Flat Lay:** Specify how the item is posed. "Invisible ghost mannequin" gives it 3D shape without a person. "Flat lay" places it on a surface.
+* *Keyword:* "Product photography," "Commercial shot."
+
+**2. The Background (White):**
+* Do not just say "white." Use specific technical terms to ensure a pure, clean white.
+* *Keywords:* "Pure white background," "Hex code #FFFFFF," "Studio isolation," "Infinite white cyclorama," "No background distractions."
+
+**3. The Lighting:**
+* Lighting must be even and professional to separate the product from the white background.
+* *Keywords:* "Softbox lighting," "Three-point lighting," "Global illumination," "Low contrast shadows," "High-key lighting."
+
+**4. Camera & Quality:**
+* *Keywords:* "8k resolution," "Phase One XF IQ4," "100mm macro lens," "sharp focus," "ultra-detailed," "photorealistic."
+
+**NEGATIVE CONSTRAINTS (Implicit in your prompt design):**
+* Ensure no human body parts, no gray walls, no vignette, and no harsh, dark shadows.
+
+**OUTPUT FORMAT:**
+Provide **only** the final prompt text.
+
+**EXAMPLE LOGIC:**
+* *Input:* Blue Denim Jeans.
+* *Output:* "A pair of indigo blue denim jeans, displayed on an invisible ghost mannequin showing a straight-leg fit. The texture of the denim weave and copper stitching is highly visible. Pure white background, #FFFFFF. Bright, even studio lighting, soft shadows. Shot on Canon EOS R5, 85mm lens, 8k, hyper-realistic e-commerce photography."
+`
+    };
+
+    let vmProductFile = null;
+
+    if (vmProductUploadArea) {
+        vmProductUploadArea.addEventListener('click', () => vmProductFileInput.click());
+        vmProductUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            vmProductUploadArea.style.borderColor = 'var(--accent-color)';
+        });
+        vmProductUploadArea.addEventListener('dragleave', () => {
+            // Only reset if no file is selected
+            if (!vmProductFile) vmProductUploadArea.style.borderColor = 'var(--border-color)';
+        });
+        vmProductUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            vmProductUploadArea.style.borderColor = 'var(--border-color)';
+            if (e.dataTransfer.files.length > 0) handleVmProductFile(e.dataTransfer.files[0]);
+        });
+        vmProductFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleVmProductFile(e.target.files[0]);
+        });
+    }
+
+    function handleVmProductFile(file) {
+        vmProductFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            vmProductPreviewContainer.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 10px;">`;
+            vmProductPreviewContainer.style.display = 'block';
+
+            // Update upload area text if p tag exists, else just ignore (safer)
+            const pTag = vmProductUploadArea.querySelector('p');
+            if (pTag) {
+                pTag.textContent = file.name;
+                pTag.style.color = 'var(--accent-color)';
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+
+    if (vmProductCountSlider && vmProductCountDisplay) {
+        vmProductCountSlider.addEventListener('input', (e) => {
+            vmProductCountDisplay.textContent = e.target.value;
+        });
+    }
+
+    // New Analyze & Generate Prompt Logic
+    if (btnAnalyzeVmProduct) {
+        btnAnalyzeVmProduct.addEventListener('click', async () => {
+            if (!vmProductFile) {
+                showAlert('Please upload a product image first (Step 1).');
+                return;
+            }
+            if (!vmProductUseCase || !vmProductUseCase.value) {
+                showAlert('Please select a use case first (Step 2).');
+                return;
+            }
+
+            const useCaseKey = vmProductUseCase.value;
+            const instruction = PRODUCT_USE_CASE_INSTRUCTIONS[useCaseKey] || "Describe the product and its motion.";
+
+            const originalBtnContent = btnAnalyzeVmProduct.innerHTML;
+            btnAnalyzeVmProduct.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...';
+            btnAnalyzeVmProduct.disabled = true;
+
+            const formData = new FormData();
+            formData.append('image', vmProductFile);
+            formData.append('instructions', instruction);
+
+            try {
+                const response = await fetch('/video-magic/prompt/optimize-with-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    vmProductPrompt.value = data.optimized_prompt;
+                    showAlert('Prompt generated from image analysis!');
+                } else {
+                    const err = await response.json();
+                    showAlert(`Error analyzing image: ${err.detail || 'Unknown error'} `);
+                }
+            } catch (error) {
+                console.error(error);
+                showAlert(`Error analyzing image: ${error.message} `);
+            } finally {
+                btnAnalyzeVmProduct.innerHTML = originalBtnContent;
+                btnAnalyzeVmProduct.disabled = false;
+            }
+        });
+    }
+
+    if (btnClearContextVmProduct) {
+        btnClearContextVmProduct.addEventListener('click', () => {
+            // Clear context for Product Motion
+            const versionSpan = document.getElementById('vm-product-context-version');
+            if (vmProductContext) vmProductContext.value = '';
+            if (versionSpan) versionSpan.textContent = '';
+        });
+    }
+
+
+    if (btnGenerateVmProduct) {
+        btnGenerateVmProduct.addEventListener('click', async () => {
+            if (!vmProductFile) {
+                showAlert('Please upload a product image first.');
+                return;
+            }
+            if (!vmProductPrompt.value) {
+                showAlert('Please enter or select a prompt.');
+                return;
+            }
+
+            setLoading(btnGenerateVmProduct, true);
+            vmProductResultContainer.innerHTML = `
+                <div class="loading-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-color);"></i>
+                    <p style="margin-top: 1rem;">Generating product video with Veo...</p>
+                </div>
+            `;
+
+            const formData = new FormData();
+            formData.append('image', vmProductFile);
+            formData.append('prompt', vmProductPrompt.value);
+            if (vmProductContext && vmProductContext.value) {
+                formData.append('context', vmProductContext.value);
+            }
+            if (vmProductCountSlider) {
+                formData.append('num_videos', vmProductCountSlider.value);
+            }
+
+            try {
+                // Reuse the same endpoint as Image-to-Video
+                const response = await fetch('/video-magic/image-to-video', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    vmProductResultContainer.innerHTML = '';
+                    vmProductResultContainer.style.display = 'grid';
+                    vmProductResultContainer.style.gridTemplateColumns = `repeat(${data.videos.length}, 1fr)`;
+                    vmProductResultContainer.style.gap = '1rem';
+
+                    data.videos.forEach((video, index) => {
+                        const card = document.createElement('div');
+                        card.className = 'video-card';
+                        card.innerHTML = `
+                            <video controls style="width: 100%; border-radius: 8px; margin-bottom: 0.5rem;">
+                                <source src="${video.video_url}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                            <div class="video-actions" style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem;">
+                                <button class="action-btn" onclick="saveVideoToProject('${video.blob_name}', '${video.video_url}', document.getElementById('vm-product-prompt').value, 'veo-3.1', document.getElementById('vm-product-context').value, window.activeContextVersionName || 'Custom / Draft', this)">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save
+                                </button>
+                                <a href="${video.video_url}" download="generated-product-video-${index}.mp4" class="action-btn">
+                                    <i class="fa-solid fa-download"></i>
+                                </a>
+                            </div>
+                        `;
+                        vmProductResultContainer.appendChild(card);
+                    });
+                } else {
+                    const err = await response.json();
+                    vmProductResultContainer.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa-solid fa-triangle-exclamation" style="color: #ff4d4d;"></i>
+                            <p style="color: #ff4d4d;">Error: ${err.detail || 'Generation failed'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error(error);
+                vmProductResultContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #ff4d4d;"></i>
+                        <p style="color: #ff4d4d;">Error: ${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                setLoading(btnGenerateVmProduct, false);
+            }
+        });
+    }
+
+    // --- Video Magic: Image to Video ---
     if (btnGenerateVmImg) {
         btnGenerateVmImg.addEventListener('click', async () => {
             if (!vmImgFile) {
@@ -3988,10 +4321,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             setLoading(btnGenerateVmImg, true);
             vmImgResultContainer.innerHTML = `
-        < div class="loading-state" >
+                <div class="loading-state">
                     <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-color);"></i>
                     <p style="margin-top: 1rem;">Generating video with Veo...</p>
-                </div >
+                </div>
         `;
 
             const formData = new FormData();
@@ -4023,7 +4356,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const card = document.createElement('div');
                         card.className = 'video-card';
                         card.innerHTML = `
-        < video controls style = "width: 100%; border-radius: 8px; margin-bottom: 0.5rem;" >
+                            <video controls style="width: 100%; border-radius: 8px; margin-bottom: 0.5rem;">
                                 <source src="${video.video_url}" type="video/mp4">
                                 Your browser does not support the video tag.
                             </video>
@@ -4041,19 +4374,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     const err = await response.json();
                     vmImgResultContainer.innerHTML = `
-        < div class="empty-state" >
+                        <div class="empty-state">
                             <i class="fa-solid fa-triangle-exclamation" style="color: #ff4d4d;"></i>
                             <p style="color: #ff4d4d;">Error: ${err.detail || 'Generation failed'}</p>
-                        </div >
+                        </div>
         `;
                 }
             } catch (error) {
                 console.error(error);
                 vmImgResultContainer.innerHTML = `
-        < div class="empty-state" >
+                    <div class="empty-state">
                         <i class="fa-solid fa-triangle-exclamation" style="color: #ff4d4d;"></i>
                         <p style="color: #ff4d4d;">Error: ${error.message}</p>
-                    </div >
+                    </div>
         `;
             } finally {
                 setLoading(btnGenerateVmImg, false);

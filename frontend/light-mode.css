@@ -290,3 +290,46 @@ body.light-mode .close-modal:hover {
 body.light-mode .modal-header h2 {
     color: var(--text-primary);
 }
+
+/* Fix Action Buttons (hover white on white issue) */
+body.light-mode .action-btn {
+    color: var(--text-secondary);
+    border-color: rgba(0, 0, 0, 0.2);
+    background: white;
+    /* Ensure visible against panel */
+}
+
+body.light-mode .action-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    /* Light grey hover */
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+/* Fix Select Project Dynamic Button (white text on white bg issue) */
+/* When in "Deselect" state (sidebar-bg/white background), force accent color text */
+body.light-mode #btn-select-project-dynamic[style*="var(--sidebar-bg)"] {
+    color: var(--accent-color) !important;
+}
+
+/* Ensure hover state is also visible */
+body.light-mode #btn-select-project-dynamic[style*="var(--sidebar-bg)"]:hover {
+    background: rgba(0, 0, 0, 0.05) !important;
+    color: var(--accent-color) !important;
+}
+
+/* Fix Info Button Visibility */
+body.light-mode .info-btn {
+    background: rgba(0, 0, 0, 0.1) !important;
+    /* Darker background */
+    color: var(--text-secondary) !important;
+    /* Visible icon color */
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    /* Adding border for clarity */
+}
+
+body.light-mode .info-btn:hover {
+    background: rgba(0, 0, 0, 0.2) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--accent-color) !important;
+}
