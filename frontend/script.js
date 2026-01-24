@@ -4040,83 +4040,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnAnalyzeVmProduct = document.getElementById('btn-analyze-vm-product'); // New Analyze Button
     const vmProductContext = document.getElementById('vm-product-context');
     const btnClearContextVmProduct = document.getElementById('btn-clear-context-vm-product');
+    const vmProductUseCaseDescription = document.getElementById('vm-product-use-case-description');
 
-    // Use Case Instructions Mapping
-    const PRODUCT_USE_CASE_INSTRUCTIONS = {
-        'product-image-motion': `
-**ROLE:**
-You are an expert AI Video Prompt Director specialized in high-end Fashion E-commerce. Your goal is to analyze a static product image and write a highly technical text-to-video prompt that will generate a cinematic video of that product.
-
-**INPUT ANALYSIS:**
-Analyze the uploaded image for:
-1. **Product Type:** (e.g., Sneaker, Handbag, Trench Coat).
-2. **Material Physics:** Determine the fabric weight and texture (e.g., Stiff Leather = rigid motion; Silk/Satin = fluid ripples; Denim = heavy structure).
-3. **Lighting Setup:** Identify the current light source (Softbox, Hard light, Rim light).
-
-**PROMPT GENERATION RULES:**
-Based on your analysis, construct a prompt using this specific formula:
-\`[Camera Movement] + [Subject Description with Material Emphasis] + [Lighting Action] + [Technical Keywords]\`
-
-**GUIDELINES FOR MOTION (STRICT):**
-* **NO HUMANS:** Never imply a model is wearing the item. The item is on a ghost mannequin, flat lay, or hanging.
-* **CAMERA DRIVEN:** Since the object is static, motion must come from the camera (Orbit, Slow Pan, Rack Focus) or the Lighting (Light sweep, Reflection shift).
-* **MATERIAL ADJECTIVES:**
-    * If **Shiny/Glossy:** Use words like "specular highlights," "light refraction," "shimmering."
-    * If **Soft/Fabric:** Use words like "soft texture," "micro-fiber detail," "gentle sway."
-    * If **Rigid/Structured:** Use words like "solid form," "high-contrast geometry," "stationary."
-
-**OUTPUT FORMAT:**
-Provide only the final prompt text, ready for copy-pasting.
-
-**EXAMPLE LOGIC:**
-* *Image is a Leather Bag:* Prompt should focus on "Light sweeping across the grain" and "Slow orbit."
-* *Image is a Silk Scarf:* Prompt should focus on "Gentle breeze" and "Rippling fabric."
-
-**YOUR TASK:**
-Look at the attached image and generate the perfect video generation prompt following these constraints.
-`,
-        'studio-photography-motion': `
-**ROLE:**
-You are a Lead Commercial Photographer and AI Prompt Engineer specialized in High-End E-commerce and Catalog Photography. Your task is to analyze an uploaded product reference and generate a precise text-to-image prompt to recreate that product in a pristine, white-background studio setting.
-
-**INPUT ANALYSIS:**
-Analyze the uploaded image for:
-1.  **Product Identity:** Exact item type, cut, and fit (e.g., Oversized Hoodie, Slim-fit Trousers).
-2.  **Material & Texture:** Identify the fabric (e.g., Heavyweight Cotton, Glossy Leather, Sheer Chiffon) to ensure the prompt captures the tactile quality.
-3.  **Color Palette:** Identify the exact color name and tone.
-
-**PROMPT GENERATION FORMULA:**
-Construct the prompt using this structure:
-\`[Subject Description] + [Background Specs] + [Lighting Setup] + [Camera & Technical Specs]\`
-
-**DETAILED GUIDELINES:**
-
-**1. The Subject (The Product):**
-* Describe the item in high detail (stitching, zippers, texture).
-* **Ghost Mannequin/Flat Lay:** Specify how the item is posed. "Invisible ghost mannequin" gives it 3D shape without a person. "Flat lay" places it on a surface.
-* *Keyword:* "Product photography," "Commercial shot."
-
-**2. The Background (White):**
-* Do not just say "white." Use specific technical terms to ensure a pure, clean white.
-* *Keywords:* "Pure white background," "Hex code #FFFFFF," "Studio isolation," "Infinite white cyclorama," "No background distractions."
-
-**3. The Lighting:**
-* Lighting must be even and professional to separate the product from the white background.
-* *Keywords:* "Softbox lighting," "Three-point lighting," "Global illumination," "Low contrast shadows," "High-key lighting."
-
-**4. Camera & Quality:**
-* *Keywords:* "8k resolution," "Phase One XF IQ4," "100mm macro lens," "sharp focus," "ultra-detailed," "photorealistic."
-
-**NEGATIVE CONSTRAINTS (Implicit in your prompt design):**
-* Ensure no human body parts, no gray walls, no vignette, and no harsh, dark shadows.
-
-**OUTPUT FORMAT:**
-Provide **only** the final prompt text.
-
-**EXAMPLE LOGIC:**
-* *Input:* Blue Denim Jeans.
-* *Output:* "A pair of indigo blue denim jeans, displayed on an invisible ghost mannequin showing a straight-leg fit. The texture of the denim weave and copper stitching is highly visible. Pure white background, #FFFFFF. Bright, even studio lighting, soft shadows. Shot on Canon EOS R5, 85mm lens, 8k, hyper-realistic e-commerce photography."
-`
+    const USE_CASE_DESCRIPTIONS = {
+        'product-image-motion': "Generates cinematic camera movements (orbit, pan) around your static product.",
+        'studio-photography-motion': "Recreates your product in a pristine white studio setting, preserving the model if present.",
+        'runway-product-motion': "Animates the model in your image walking down a pristine white runway."
     };
 
     let vmProductFile = null;
@@ -4158,6 +4087,15 @@ Provide **only** the final prompt text.
         reader.readAsDataURL(file);
     }
 
+    if (vmProductUseCase) {
+        vmProductUseCase.addEventListener('change', (e) => {
+            const description = USE_CASE_DESCRIPTIONS[e.target.value];
+            if (vmProductUseCaseDescription) {
+                vmProductUseCaseDescription.textContent = description || "";
+            }
+        });
+    }
+
     if (vmProductCountSlider && vmProductCountDisplay) {
         vmProductCountSlider.addEventListener('input', (e) => {
             vmProductCountDisplay.textContent = e.target.value;
@@ -4177,7 +4115,8 @@ Provide **only** the final prompt text.
             }
 
             const useCaseKey = vmProductUseCase.value;
-            const instruction = PRODUCT_USE_CASE_INSTRUCTIONS[useCaseKey] || "Describe the product and its motion.";
+            // Send the key directly; backend handles the prompt lookup
+            const instruction = useCaseKey;
 
             const originalBtnContent = btnAnalyzeVmProduct.innerHTML;
             btnAnalyzeVmProduct.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...';

@@ -9,6 +9,10 @@ from typing import List, Dict
 from fastapi import UploadFile
 from backend.services.storage import BUCKET_NAME, upload_bytes
 import asyncio
+from backend.prompts.video_script_writer import VIDEO_SCRIPT_WRITER_PROMPT
+from backend.prompts.video_script_editor import VIDEO_SCRIPT_EDITOR_PROMPT
+from backend.prompts.prompt_optimizer import PROMPT_OPTIMIZER_PROMPT
+from backend.prompts.product_motion import PRODUCT_MOTION_PROMPTS
 
 async def generate_image_to_video(image: UploadFile, prompt: str, context: str = None, num_videos: int = 1) -> List[dict]:
     """
@@ -223,64 +227,14 @@ async def generate_script(prompt: str, context: str = None) -> List[Dict[str, st
         print("DEBUG: Using Gemini API for script generation")
     
     # Construct the prompt
-    full_prompt = f"""
-    You are an expert video scriptwriter. Your task is to create a compelling video script based on the user's request.
+    # Construct the prompt
+    full_prompt = VIDEO_SCRIPT_WRITER_PROMPT.format(
+        prompt=prompt,
+        context_section=f"Context / Brand Guidelines:\n{context}\n\nPlease ensure the script aligns with these guidelines." if context else ""
+    )
     
-    User Prompt: {prompt}
-    
-    Constraints:
-    - Each scene MUST be exactly 8 seconds long. Keep the action and dialogue distinct and concise to fit this duration.
-    
-    """
-    
-    if context:
-        full_prompt += f"""
-        Context / Brand Guidelines:
-        {context}
-        
-        Please ensure the script aligns with these guidelines.
-        """
-        
-    full_prompt += """
-    Output Format:
-    Return ONLY a JSON object with two main keys: "global_elements" and "scenes".
-    
-    1. "global_elements": An object containing detailed definitions that apply to the entire video. The values for each key MUST be a single string, not an object. You MUST include the following keys:
-        - "character": Highly detailed character description. Include specific facial features, hair style/color, body type, age, clothing style, and any distinguishing marks.
-        - "visual_style": Overall visual style (cinematic, handheld, vintage, etc.).
-        - "audio_vibe": General audio atmosphere and mood.
-        - "costume": Specific costume details and materials.
-        - "color_palette": Primary and secondary colors used.
-        - "set_design": Setting and environment details.
-        - "objects_props": Key objects and props featured.
-        - "filming_techniques": Camera angles, movement, and lighting style.
-        - "voice": Voiceover tone, gender, and emotion.
+    # Removed hardcoded prompt and example as they are now in the imported constant
 
-    2. "scenes": An array of objects. Each object represents a scene and must have exactly two keys:
-        - "visual": A description of the specific action in this scene. Focus on the narrative movement.
-        - "audio": The specific dialogue, voiceover, or sound effects for this scene.
-    
-    The goal is to ensure high consistency by defining global elements first.
-    
-    Example:
-    {
-        "global_elements": {
-            "character": "A young woman, mid-20s, with curly hair.",
-            "visual_style": "Cinematic, soft focus, golden hour lighting.",
-            "audio_vibe": "Peaceful, acoustic, warm.",
-            "costume": "Beige knit sweater, cozy vibe.",
-            "color_palette": "Gold, beige, teal.",
-            "set_design": "Modern kitchen with rustic touches.",
-            "objects_props": "White ceramic coffee cup.",
-            "filming_techniques": "Slow pans, rack focus, macro shots.",
-            "voice": "Female, warm, inviting, soft spoken."
-        },
-        "scenes": [
-            {"visual": "Close up of the coffee cup with steam rising. Hand enters frame.", "audio": "SFX: Birds chirping. VO: Start your day right."},
-            {"visual": "Woman takes a sip and smiles looking out the window.", "audio": "VO: With our new organic blend."}
-        ]
-    }
-    """
 
     try:
         # Using Gemini 2.5 Flash Experimental as requested
@@ -330,18 +284,10 @@ async def edit_script(current_script: List[Dict[str, str]], instructions: str) -
         client = genai.Client(api_key=api_key)
         print("DEBUG: Using Gemini API for script editing")
     
-    full_prompt = f"""
-    You are an expert video script editor.
-    
-    Current Script (JSON):
-    {json.dumps(current_script, indent=2)}
-    
-    User Instructions for Edit:
-    {instructions}
-    
-    Please modify the script according to the instructions. Maintain the same JSON structure (array of objects with "visual" and "audio").
-    Return ONLY the JSON array.
-    """
+    full_prompt = VIDEO_SCRIPT_EDITOR_PROMPT.format(
+        current_script_json=json.dumps(current_script, indent=2),
+        instructions=instructions
+    )
     
     try:
         response = client.models.generate_content(
@@ -388,17 +334,13 @@ async def optimize_image_prompt(image: UploadFile, instructions: str) -> str:
     # Read image bytes
     image_bytes = await image.read()
     
-    prompt = f"""
-    You are an expert video prompt engineer. 
-    Analyze the provided image and the user's instructions: "{instructions}".
-    
-    Create a detailed, descriptive prompt for a video generation model (like Veo) that:
-    1. Accurately describes the visual elements of the image (subject, setting, lighting, style).
-    2. Incorporates the user's requested motion or transformation.
-    3. Uses professional filmmaking terminology (e.g., "slow pan", "rack focus", "cinematic lighting").
-    
-    Output ONLY the optimized prompt text. Do not include any explanations or markdown formatting.
-    """
+    # Check if instructions correspond to a known product motion prompt key
+    if instructions in PRODUCT_MOTION_PROMPTS:
+        # It's a key! Use the specific persona prompt
+        prompt = PRODUCT_MOTION_PROMPTS[instructions]
+    else:
+        # It's raw text instructions! Use the generic optimizer prompt
+        prompt = PROMPT_OPTIMIZER_PROMPT.format(instructions=instructions)
 
     try:
         response = client.models.generate_content(
