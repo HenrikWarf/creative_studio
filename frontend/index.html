@@ -947,8 +947,139 @@
                 </div>
 
                 <!-- Tab Content: First/Last Frame (Placeholder) -->
+
+                <!-- Tab Content: First/Last Frame -->
                 <div id="vm-first-last" class="tab-content">
-                    <!-- Placeholder removed -->
+                    <div style="display: flex; flex-direction: column; gap: 2rem; height: 100%;">
+
+                        <!-- Top: Context Engineering (Full Width) -->
+                        <div class="glass-panel full-width" style="padding: 0;">
+                            <button class="accordion-header" id="btn-context-accordion-vm-fl">
+                                <span><i class="fa-solid fa-layer-group"></i> Context Engineering <small
+                                        class="text-muted" style="font-size: 0.8em; margin-left: 10px;">(Need to apply
+                                        the context to make use of
+                                        created context)</small></span>
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </button>
+                            <div class="accordion-content" id="context-content-vm-fl" hidden>
+                                <div style="padding: 1rem;">
+                                    <div id="context-checkboxes-vm-fl"
+                                        style="display: grid; grid-template-columns: auto auto; justify-content: start; gap: 10px 40px; margin-top: 1rem;">
+                                        <!-- Checkboxes injected here -->
+                                    </div>
+                                    <button id="btn-apply-context-vm-fl" class="secondary-btn small-btn"
+                                        style="margin-top: 1.5rem; white-space: nowrap; width: auto;">
+                                        Apply to Prompt
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Middle: Prompt & Controls -->
+                        <div class="glass-panel full-width" style="margin-bottom: 1rem;">
+                            <div class="creation-controls-grid">
+                                <!-- Left Column: Prompt -->
+                                <div class="input-group"
+                                    style="display: flex; flex-direction: column; height: 100%; gap: 1rem;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <label>Transition Prompt</label>
+                                        <button id="btn-optimize-vm-fl" class="icon-btn" title="Enhance with Gemini"
+                                            style="font-size: 0.9rem; color: var(--accent-color);">
+                                            <i class="fa-solid fa-wand-magic-sparkles"></i> Enhance
+                                        </button>
+                                    </div>
+                                    <textarea id="vm-fl-prompt" class="large-prompt"
+                                        placeholder="Describe the transition (e.g. 'Morph smoothly from the first image to the last image')..."
+                                        style="flex: 1; min-height: 150px; width: 100%; resize: vertical; margin-bottom: 1rem;"></textarea>
+
+                                    <div style="flex: 1; display: flex; flex-direction: column;">
+                                        <div
+                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                            <label>Context <span id="vm-fl-context-version"
+                                                    style="font-size: 0.8rem; color: var(--accent-color); margin-left: 0.5rem;"></span></label>
+                                            <button id="btn-clear-context-vm-fl" class="small-delete-btn"
+                                                title="Remove Context"
+                                                style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        <textarea id="vm-fl-context" class="large-prompt"
+                                            placeholder="Applied context will appear here..." readonly
+                                            style="flex: 1; min-height: 100px; width: 100%; font-size: 0.9rem; opacity: 0.8;"></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Right Column: Image Inputs & Generate -->
+                                <div class="creation-options">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                        <!-- First Frame -->
+                                        <div class="input-group">
+                                            <label>First Frame</label>
+                                            <div class="file-upload" id="drop-zone-vm-fl-first" style="height: 120px;">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                                <p style="font-size: 0.8rem;">First Image</p>
+                                                <input type="file" id="file-input-vm-fl-first" accept="image/*" hidden>
+                                            </div>
+                                            <div id="preview-container-vm-fl-first"
+                                                style="display: none; position: relative; margin-top: 5px;">
+                                                <img id="preview-img-vm-fl-first" src="" alt="First Frame"
+                                                    class="preview-img"
+                                                    style="max-height: 100px; width: 100%; object-fit: contain;">
+                                                <button id="btn-remove-img-vm-fl-first" class="small-delete-btn"
+                                                    style="position: absolute; top: 5px; right: 5px;">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Last Frame -->
+                                        <div class="input-group">
+                                            <label>Last Frame</label>
+                                            <div class="file-upload" id="drop-zone-vm-fl-last" style="height: 120px;">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                                <p style="font-size: 0.8rem;">Last Image</p>
+                                                <input type="file" id="file-input-vm-fl-last" accept="image/*" hidden>
+                                            </div>
+                                            <div id="preview-container-vm-fl-last"
+                                                style="display: none; position: relative; margin-top: 5px;">
+                                                <img id="preview-img-vm-fl-last" src="" alt="Last Frame"
+                                                    class="preview-img"
+                                                    style="max-height: 100px; width: 100%; object-fit: contain;">
+                                                <button id="btn-remove-img-vm-fl-last" class="small-delete-btn"
+                                                    style="position: absolute; top: 5px; right: 5px;">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="input-group" style="margin-top: 10px;">
+                                        <div
+                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                            <label>Number of Videos</label>
+                                            <span id="vm-fl-count-display"
+                                                style="font-size: 0.9rem; color: var(--accent-color);">1</span>
+                                        </div>
+                                        <input type="range" id="vm-fl-count-slider" min="1" max="3" value="1" step="1"
+                                            style="width: 100%;">
+                                    </div>
+
+                                    <button id="btn-generate-vm-fl" class="primary-btn full-width"
+                                        style="margin-top: 1rem;">
+                                        <i class="fa-solid fa-video"></i> Generate Video
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom: Output -->
+                        <div class="preview-area glass-panel full-width" style="min-height: 400px;">
+                            <div id="vm-fl-result-container" class="empty-state">
+                                <i class="fa-solid fa-film"></i>
+                                <p>Generated video will appear here</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
