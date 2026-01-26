@@ -5,7 +5,7 @@ import uuid
 import urllib.request
 from google import genai
 from google.genai import types
-from typing import List, Dict
+from typing import List, Dict, Optional
 from fastapi import UploadFile
 from backend.services.storage import BUCKET_NAME, upload_bytes
 import asyncio
@@ -531,3 +531,382 @@ async def generate_video_first_last(first_image: UploadFile, last_image: UploadF
     results = await asyncio.gather(*tasks)
     
     return {"videos": results}
+
+async def generate_video_reference(image: UploadFile, prompt: str, context: Optional[str] = None, num_videos: int = 1) -> Dict[str, List[Dict[str, str]]]:
+    """
+    Generates videos using a reference image (subject reference) with Veo 3.1.
+    Returns a dict with 'videos' list containing 'video_url' and 'blob_name'.
+    """
+    if os.getenv("GOOGLE_GENAI_USE_VERTEXAI") == "True":
+        client = genai.Client(
+            vertexai=True,
+            project=os.getenv("GOOGLE_CLOUD_PROJECT"),
+            location=os.getenv("GOOGLE_CLOUD_LOCATION")
+        )
+        print("DEBUG: Using Vertex AI for reference image video generation")
+    else:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise Exception("GEMINI_API_KEY not found")
+        client = genai.Client(api_key=api_key)
+        print("DEBUG: Using Gemini API for reference image video generation")
+
+    # 1. Upload Input Image to GCS (Once)
+    image_bytes = await image.read()
+    input_filename = f"temp_inputs/{uuid.uuid4()}_ref.png"
+    
+    upload_bytes(image_bytes, input_filename, content_type=image.content_type)
+    input_gcs_uri = f"gs://{BUCKET_NAME}/{input_filename}"
+    
+    print(f"DEBUG: Input reference image uploaded to {input_gcs_uri}")
+
+    # 2. Construct Prompt
+    full_prompt = prompt
+    if context:
+        full_prompt += f"\n\nContext / Brand Guidelines:\n{context}\n\nPlease ensure the video aligns with these guidelines."
+
+    print(f"DEBUG: Generating {num_videos} videos with prompt: {full_prompt}")
+
+    async def _generate_single_video():
+        # 3. Call Veo Model
+        try:
+            output_filename = f"generated_videos/{uuid.uuid4()}.mp4"
+            output_gcs_uri = f"gs://{BUCKET_NAME}/{output_filename}"
+            
+            config_params = {
+                "aspect_ratio": "16:9",
+            }
+            
+            # Prepare Reference Image
+            if os.getenv("GOOGLE_GENAI_USE_VERTEXAI") == "True":
+                config_params["output_gcs_uri"] = output_gcs_uri
+                
+                ref_image = types.VideoGenerationReferenceImage(
+                    image=types.Image(
+                        gcs_uri=input_gcs_uri,
+                        mime_type=image.content_type
+                    ),
+                    reference_type="asset" 
+                )
+                config_params["reference_images"] = [ref_image]
+            else:
+                 ref_image = types.VideoGenerationReferenceImage(
+                    image=types.Image(
+                        image_bytes=image_bytes,
+                        mime_type=image.content_type
+                    ),
+                    reference_type="asset"
+                )
+                 config_params["reference_images"] = [ref_image]
+
+            # Get the running loop
+            loop = asyncio.get_running_loop()
+
+            def call_generate_videos():
+                # Note: valid prompt is required even with reference image
+                return client.models.generate_videos(
+                    model="veo-3.1-generate-preview",
+                    prompt=full_prompt,
+                    config=types.GenerateVideosConfig(**config_params),
+                )
+
+            operation = await loop.run_in_executor(None, call_generate_videos)
+
+            print("DEBUG: Video generation started. Waiting for completion...")
+            
+            # 4. Poll for completion
+            while not operation.done:
+                await asyncio.sleep(10)
+                operation = await loop.run_in_executor(None, lambda: client.operations.get(operation))
+                print("DEBUG: Waiting for reference image video generation...")
+
+            if operation.error:
+                raise Exception(f"Video generation failed: {operation.error}")
+            
+            # Handle Result (URI processing)
+            if operation.result and operation.result.generated_videos:
+                video = operation.result.generated_videos[0].video
+                uri = video.uri
+                 
+                print(f"DEBUG: Video generation completed. URI: {uri}")
+                 
+                if not uri:
+                     raise Exception("Generated video has no URI")
+
+                # Handle GCS URI (gs://) or HTTP URI
+                if uri.startswith("gs://"):
+                    print("DEBUG: Handling gs:// URI directly")
+                    # Parse bucket and blob name from uri: gs://bucket/blob_name
+                    path_parts = uri[5:].split("/", 1)
+                    if len(path_parts) != 2:
+                         raise Exception(f"Invalid GCS URI: {uri}")
+                    
+                    source_bucket_name = path_parts[0]
+                    source_blob_name = path_parts[1]
+                    
+                    from backend.services.storage import storage_client
+                    source_bucket = storage_client.bucket(source_bucket_name)
+                    source_blob = source_bucket.blob(source_blob_name)
+                    
+                    # Wait for consistency
+                    if not source_blob.exists():
+                         await asyncio.sleep(2)
+                         if not source_blob.exists():
+                             raise Exception(f"Generated video blob not found at {uri}")
+
+                    destination_bucket = storage_client.bucket(BUCKET_NAME)
+                    destination_blob = destination_bucket.blob(output_filename)
+                    
+                    if source_bucket_name == BUCKET_NAME and source_blob_name == output_filename:
+                        print("DEBUG: Video already at destination.")
+                    else:
+                        print(f"DEBUG: Copying from {uri} to gs://{BUCKET_NAME}/{output_filename}")
+                        source_bucket.copy_blob(source_blob, destination_bucket, output_filename)
+
+                else:
+                    # Handle HTTP URI (AI Studio)
+                    print("DEBUG: Downloading generated video from HTTP URI...")
+                    req = urllib.request.Request(uri)
+                    if "googleapis.com" in uri:
+                        req.add_header('x-goog-api-key', api_key)
+                    
+                    with urllib.request.urlopen(req) as response:
+                        video_data = response.read()
+                        
+                    print(f"DEBUG: Uploading to GCS: {output_filename}")
+                    upload_bytes(video_data, output_filename, content_type="video/mp4")
+                
+                from backend.services.storage import generate_signed_url
+                video_url = generate_signed_url(output_filename)
+                
+                return {
+                    "video_url": video_url,
+                    "blob_name": output_filename
+                }
+            else:
+                raise Exception("No video generated in response")
+
+        except Exception as e:
+            print(f"Error generating video: {e}")
+            raise e
+
+    # Run concurrently
+    tasks = [_generate_single_video() for _ in range(num_videos)]
+    results = await asyncio.gather(*tasks)
+    
+    return {"videos": results}
+
+async def extend_video(video: UploadFile, prompt: str, context: Optional[str] = None, num_videos: int = 1) -> Dict[str, List[Dict[str, str]]]:
+    """
+    Extends a video using Veo 3.1.
+    Returns a dict with 'videos' list containing 'video_url' and 'blob_name'.
+    """
+    if os.getenv("GOOGLE_GENAI_USE_VERTEXAI") == "True":
+        client = genai.Client(
+            vertexai=True,
+            project=os.getenv("GOOGLE_CLOUD_PROJECT"),
+            location=os.getenv("GOOGLE_CLOUD_LOCATION")
+        )
+        print("DEBUG: Using Vertex AI for video extension")
+    else:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise Exception("GEMINI_API_KEY not found")
+        client = genai.Client(api_key=api_key)
+        print("DEBUG: Using Gemini API for video extension")
+
+    # 1. Upload Input Video to GCS (Once)
+    # Note: Veo extension requires GCS URI for input video in many cases, or we can pass bytes if small?
+    # The doc example used a GCS URI. Let's upload to GCS to be safe and consistent.
+    video_bytes = await video.read()
+    input_filename = f"temp_inputs/{uuid.uuid4()}_extend_input.mp4"
+    
+    upload_bytes(video_bytes, input_filename, content_type=video.content_type)
+    input_gcs_uri = f"gs://{BUCKET_NAME}/{input_filename}"
+    
+    print(f"DEBUG: Input video for extension uploaded to {input_gcs_uri}")
+
+    # 2. Construct Prompt
+    full_prompt = prompt
+    if context:
+        full_prompt += f"\n\nContext / Brand Guidelines:\n{context}\n\nPlease ensure the extension aligns with these guidelines."
+
+    print(f"DEBUG: Extending video {num_videos} times with prompt: {full_prompt}")
+
+    async def _generate_single_extension():
+        # 3. Call Veo Model
+        try:
+            output_filename = f"generated_videos/{uuid.uuid4()}.mp4"
+            output_gcs_uri = f"gs://{BUCKET_NAME}/{output_filename}"
+            
+            # Prepare Video Object
+            if os.getenv("GOOGLE_GENAI_USE_VERTEXAI") == "True":
+                video_input = types.Video(
+                    uri=input_gcs_uri,
+                    mime_type=video.content_type
+                )
+                config_params = {
+                    "output_gcs_uri": output_gcs_uri,
+                }
+            else:
+                video_input = types.Video(
+                    uri=input_gcs_uri,
+                    mime_type=video.content_type
+                )
+                config_params = {}
+
+            # Get the running loop
+            loop = asyncio.get_running_loop()
+
+            def call_generate_videos():
+                return client.models.generate_videos(
+                    model="veo-3.1-generate-preview", # Using same model as per doc example for extension?
+                    prompt=full_prompt,
+                    video=video_input,
+                    config=types.GenerateVideosConfig(**config_params),
+                )
+
+            operation = await loop.run_in_executor(None, call_generate_videos)
+
+            print("DEBUG: Video extension started. Waiting for completion...")
+            
+            # 4. Poll for completion
+            while not operation.done:
+                await asyncio.sleep(10)
+                operation = await loop.run_in_executor(None, lambda: client.operations.get(operation))
+                print("DEBUG: Waiting for video extension...")
+
+            if operation.error:
+                raise Exception(f"Video extension failed: {operation.error}")
+            
+            # Handle Result
+            if operation.result and operation.result.generated_videos:
+                gen_video = operation.result.generated_videos[0].video
+                uri = gen_video.uri
+                 
+                print(f"DEBUG: Video extension completed. URI: {uri}")
+                 
+                if not uri:
+                     raise Exception("Generated video has no URI")
+
+                # Handle GCS URI (gs://) or HTTP URI
+                if uri.startswith("gs://"):
+                    path_parts = uri[5:].split("/", 1)
+                    if len(path_parts) != 2:
+                         raise Exception(f"Invalid GCS URI: {uri}")
+                    
+                    source_bucket_name = path_parts[0]
+                    source_blob_name = path_parts[1]
+                    
+                    from backend.services.storage import storage_client
+                    source_bucket = storage_client.bucket(source_bucket_name)
+                    source_blob = source_bucket.blob(source_blob_name)
+                    
+                    if not source_blob.exists():
+                         await asyncio.sleep(2)
+                         if not source_blob.exists():
+                             raise Exception(f"Generated video blob not found at {uri}")
+
+                    destination_bucket = storage_client.bucket(BUCKET_NAME)
+                    destination_blob = destination_bucket.blob(output_filename)
+                    
+                    if source_bucket_name == BUCKET_NAME and source_blob_name == output_filename:
+                        print("DEBUG: Video already at destination.")
+                    else:
+                        print(f"DEBUG: Copying from {uri} to gs://{BUCKET_NAME}/{output_filename}")
+                        source_bucket.copy_blob(source_blob, destination_bucket, output_filename)
+
+                else:
+                    req = urllib.request.Request(uri)
+                    if "googleapis.com" in uri and api_key:
+                        req.add_header('x-goog-api-key', api_key)
+                    
+                    with urllib.request.urlopen(req) as response:
+                        video_data = response.read()
+                    
+                    upload_bytes(video_data, output_filename, content_type="video/mp4")
+                
+                from backend.services.storage import generate_signed_url
+                video_url = generate_signed_url(output_filename)
+                
+                return {
+                    "video_url": video_url,
+                    "blob_name": output_filename
+                }
+            else:
+                raise Exception("No video generated in response")
+
+        except Exception as e:
+            print(f"Error extending video: {e}")
+            raise e
+
+    # Run concurrently
+    tasks = [_generate_single_extension() for _ in range(num_videos)]
+    results = await asyncio.gather(*tasks)
+    
+    return {"videos": results}
+
+async def optimize_video_prompt(video: UploadFile, instructions: str) -> str:
+    """
+    Optimizes a prompt for video extension using Gemini 1.5 Pro (multimodal).
+    """
+    # 1. Setup Client
+    if os.getenv("GOOGLE_GENAI_USE_VERTEXAI") == "True":
+        client = genai.Client(
+            vertexai=True,
+            project=os.getenv("GOOGLE_CLOUD_PROJECT"),
+            location=os.getenv("GOOGLE_CLOUD_LOCATION")
+        )
+    else:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+             raise Exception("GEMINI_API_KEY not found")
+        client = genai.Client(api_key=api_key)
+
+    # 2. Upload Video for Gemini Analysis
+    # We need to upload to a location Gemini can read (File API or GCS).
+    # For Video Magic, we are using the GenAI SDK.
+    # We can upload the bytes directly if small, or use File API.
+    # Video extension inputs might be large, so let's use the File API.
+    
+    video_bytes = await video.read()
+    
+    # We are using the GenAI SDK 'files' API for multimodal understanding
+    # Create a temporary file
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as temp_video:
+        temp_video.write(video_bytes)
+        temp_video_path = temp_video.name
+
+    try:
+        # Upload using the Files API (supports both Vertex and clean GenAI usually)
+        # Note: In Vertex AI context, we might need GCS.
+        # But for 'gemini-1.5-pro', it accepts parts.
+        
+        # Let's try uploading to the client's file store
+        uploaded_file = client.files.upload(path=temp_video_path)
+        
+        # Wait for processing state if video
+        while uploaded_file.state.name == "PROCESSING":
+             print("Waiting for video to be processed for prompt optimization...")
+             time.sleep(2)
+             uploaded_file = client.files.get(name=uploaded_file.name)
+             
+        if uploaded_file.state.name == "FAILED":
+             raise Exception("Video processing failed for optimization")
+
+        # 3. Generate Content
+        from backend.prompts.prompt_optimizer import PROMPT_OPTIMIZER_VIDEO_PROMPT
+        prompt = PROMPT_OPTIMIZER_VIDEO_PROMPT.format(instructions=instructions)
+        
+        response = client.models.generate_content(
+            model="gemini-1.5-pro-002", # Use a capable multimodal model
+            contents=[uploaded_file, prompt]
+        )
+        
+        return response.text.strip()
+
+    finally:
+        # Cleanup
+        if os.path.exists(temp_video_path):
+            os.unlink(temp_video_path) 

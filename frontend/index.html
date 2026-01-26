@@ -620,6 +620,8 @@
                     <button class="tab-btn" data-tab="vm-img-to-video">Image to Video</button>
                     <button class="tab-btn" data-tab="vm-product-motion">Product Motion</button>
                     <button class="tab-btn" data-tab="vm-first-last">First/Last Frame</button>
+                    <button class="tab-btn" data-tab="vm-reference">Subject Reference</button>
+                    <button class="tab-btn" data-tab="vm-extend">Extend Video</button>
                 </div>
 
                 <!-- Tab Content: Script Generation -->
@@ -1077,6 +1079,237 @@
                             <div id="vm-fl-result-container" class="empty-state">
                                 <i class="fa-solid fa-film"></i>
                                 <p>Generated video will appear here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Subject Reference -->
+                <div id="vm-reference" class="tab-content">
+                    <div style="display: flex; flex-direction: column; gap: 2rem; height: 100%;">
+                        <!-- Context Accordion -->
+                        <div class="glass-panel full-width" style="padding: 0;">
+                            <button class="accordion-header" id="btn-context-accordion-vm-ref">
+                                <span><i class="fa-solid fa-layer-group"></i> Context Engineering <small
+                                        class="text-muted" style="font-size: 0.8em; margin-left: 10px;">(Apply
+                                        Style/Brand Context)</small></span>
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </button>
+                            <div class="accordion-content" id="context-content-vm-ref" hidden>
+                                <div style="padding: 1rem;">
+                                    <div id="context-checkboxes-vm-ref"
+                                        style="display: grid; grid-template-columns: auto auto; justify-content: start; gap: 10px 40px; margin-top: 1rem;">
+                                    </div>
+                                    <button id="btn-apply-context-vm-ref" class="secondary-btn small-btn"
+                                        style="margin-top: 1.5rem; white-space: nowrap; width: auto;">
+                                        Apply to Prompt
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Main Content (Stacked) -->
+                        <div class="workspace"
+                            style="flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 1rem;">
+
+                            <!-- Prompt & Context (Full Width) -->
+                            <div class="glass-panel full-width">
+                                <div class="input-group" style="display: flex; flex-direction: column;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <label>Video Prompt</label>
+                                        <button id="btn-optimize-vm-ref" class="icon-btn" title="Enhance with Gemini"
+                                            style="font-size: 0.9rem; color: var(--accent-color);">
+                                            <i class="fa-solid fa-wand-magic-sparkles"></i> Enhance
+                                        </button>
+                                    </div>
+                                    <textarea id="vm-ref-prompt" class="large-prompt"
+                                        placeholder="Describe the action and scene involving the subject..."
+                                        style="min-height: 150px; width: 100%; resize: vertical; margin-bottom: 1rem;"></textarea>
+
+                                    <!-- Context Indicator -->
+                                    <div
+                                        style="margin-top: 0.5rem; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <label>Context <span id="vm-ref-context-version"
+                                                    style="font-size: 0.8rem; color: var(--accent-color); margin-left: 0.5rem;"></span></label>
+                                        </div>
+                                        <button id="btn-clear-context-vm-ref" class="small-delete-btn"
+                                            title="Remove Context"
+                                            style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    <textarea id="vm-ref-context" class="large-prompt"
+                                        placeholder="Applied context will appear here..." readonly
+                                        style="flex: 1; min-height: 100px; width: 100%; font-size: 0.9rem; opacity: 0.8; margin-top: 0.5rem;"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Image Upload & Generate (Full Width) -->
+                            <div class="glass-panel full-width">
+                                <div
+                                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start;">
+                                    <div class="input-group">
+                                        <label>Reference Subject Image</label>
+                                        <div class="file-upload" id="drop-zone-vm-ref" style="height: 150px;">
+                                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                                            <p>Click or Drag & Drop Subject Image</p>
+                                            <input type="file" id="file-input-vm-ref" accept="image/*" hidden>
+                                        </div>
+                                        <div id="preview-container-vm-ref"
+                                            style="display: none; position: relative; margin-top: 5px;">
+                                            <img id="preview-img-vm-ref" src="" alt="Subject Reference"
+                                                class="preview-img"
+                                                style="max-height: 150px; width: 100%; object-fit: contain;">
+                                            <button id="btn-remove-img-vm-ref" class="small-delete-btn"
+                                                style="position: absolute; top: 5px; right: 5px;">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="creation-options"
+                                        style="padding: 0; box-shadow: none; background: transparent; border: none;">
+                                        <div class="input-group">
+                                            <div
+                                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                                <label>Number of Videos</label>
+                                                <span id="vm-ref-count-display"
+                                                    style="font-size: 0.9rem; color: var(--accent-color);">1</span>
+                                            </div>
+                                            <input type="range" id="vm-ref-count-slider" min="1" max="3" value="1"
+                                                step="1" style="width: 100%;">
+                                        </div>
+
+                                        <button id="btn-generate-vm-ref" class="primary-btn full-width"
+                                            style="margin-top: 2rem;">
+                                            <i class="fa-solid fa-video"></i> Generate Video
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Output -->
+                    <div class="preview-area glass-panel full-width" style="min-height: 400px; margin-top: 2rem;">
+                        <div id="vm-ref-result-container" class="empty-state">
+                            <i class="fa-solid fa-film"></i>
+                            <p>Generated video will appear here</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Extend Video -->
+                <div id="vm-extend" class="tab-content">
+                    <div style="display: flex; flex-direction: column; gap: 2rem; height: 100%;">
+                        <!-- Context Accordion -->
+                        <div class="glass-panel full-width" style="padding: 0;">
+                            <button class="accordion-header" id="btn-context-accordion-vm-extend">
+                                <span><i class="fa-solid fa-layer-group"></i> Context Engineering <small
+                                        class="text-muted" style="font-size: 0.8em; margin-left: 10px;">(Apply
+                                        Style/Brand Context)</small></span>
+                                <i class="fa-solid fa-chevron-down"></i>
+                            </button>
+                            <div class="accordion-content" id="context-content-vm-extend" hidden>
+                                <div style="padding: 1rem;">
+                                    <div id="context-checkboxes-vm-extend"
+                                        style="display: grid; grid-template-columns: auto auto; justify-content: start; gap: 10px 40px; margin-top: 1rem;">
+                                    </div>
+                                    <button id="btn-apply-context-vm-extend" class="secondary-btn small-btn"
+                                        style="margin-top: 1.5rem; white-space: nowrap; width: auto;">
+                                        Apply to Prompt
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Main Content (Stacked) -->
+                        <div class="workspace"
+                            style="flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 1rem;">
+
+                            <!-- Prompt & Context (Full Width) -->
+                            <div class="glass-panel full-width">
+                                <div class="input-group" style="display: flex; flex-direction: column;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <label>Extension Prompt</label>
+                                        <button id="btn-optimize-vm-extend" class="icon-btn" title="Enhance with Gemini"
+                                            style="font-size: 0.9rem; color: var(--accent-color);">
+                                            <i class="fa-solid fa-wand-magic-sparkles"></i> Enhance
+                                        </button>
+                                    </div>
+                                    <textarea id="vm-extend-prompt" class="large-prompt"
+                                        placeholder="Describe how the video should continue..."
+                                        style="min-height: 150px; width: 100%; resize: vertical; margin-bottom: 1rem;"></textarea>
+
+                                    <!-- Context Indicator -->
+                                    <div
+                                        style="margin-top: 0.5rem; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <label>Context <span id="vm-extend-context-version"
+                                                    style="font-size: 0.8rem; color: var(--accent-color); margin-left: 0.5rem;"></span></label>
+                                        </div>
+                                        <button id="btn-clear-context-vm-extend" class="small-delete-btn"
+                                            title="Remove Context"
+                                            style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    <textarea id="vm-extend-context" class="large-prompt"
+                                        placeholder="Applied context will appear here..." readonly
+                                        style="flex: 1; min-height: 100px; width: 100%; font-size: 0.9rem; opacity: 0.8; margin-top: 0.5rem;"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Video Upload & Generate (Full Width) -->
+                            <div class="glass-panel full-width">
+                                <div
+                                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start;">
+                                    <div class="input-group">
+                                        <label>Base Video (MP4)</label>
+                                        <div class="file-upload" id="drop-zone-vm-extend" style="height: 150px;">
+                                            <i class="fa-solid fa-file-video"></i>
+                                            <p>Click or Drag & Drop Video (MP4)</p>
+                                            <input type="file" id="file-input-vm-extend" accept="video/mp4" hidden>
+                                        </div>
+                                        <div id="preview-container-vm-extend"
+                                            style="display: none; position: relative; margin-top: 5px;">
+                                            <video id="preview-video-vm-extend" controls
+                                                style="max-height: 150px; width: 100%; border-radius: 8px;"></video>
+                                            <button id="btn-remove-video-vm-extend" class="small-delete-btn"
+                                                style="position: absolute; top: 5px; right: 5px; z-index: 10;">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="creation-options"
+                                        style="padding: 0; box-shadow: none; background: transparent; border: none;">
+                                        <div class="input-group">
+                                            <div
+                                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                                <label>Number of Videos</label>
+                                                <span id="vm-extend-count-display"
+                                                    style="font-size: 0.9rem; color: var(--accent-color);">1</span>
+                                            </div>
+                                            <input type="range" id="vm-extend-count-slider" min="1" max="3" value="1"
+                                                step="1" style="width: 100%;">
+                                        </div>
+
+                                        <button id="btn-generate-vm-extend" class="primary-btn full-width"
+                                            style="margin-top: 2rem;">
+                                            <i class="fa-solid fa-video"></i> Extend Video
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Output -->
+                        <div class="preview-area glass-panel full-width" style="min-height: 400px; margin-top: 2rem;">
+                            <div id="vm-extend-result-container" class="empty-state">
+                                <i class="fa-solid fa-film"></i>
+                                <p>Extended video will appear here</p>
                             </div>
                         </div>
                     </div>

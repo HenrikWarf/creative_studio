@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException, BackgroundTasks
 from typing import List, Optional
-from backend.services.video_magic import generate_script, edit_script, generate_image_to_video, optimize_image_prompt, generate_video_first_last
+from backend.services.video_magic import generate_script, edit_script, generate_image_to_video, optimize_image_prompt, generate_video_first_last, generate_video_reference, extend_video, optimize_video_prompt
 from backend.services.storage import upload_bytes
 from backend.schemas import AssetCreate
 import json
@@ -81,5 +81,39 @@ async def create_first_last_video(
     try:
         result = await generate_video_first_last(first_image, last_image, prompt, context, num_videos)
         return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+@router.post("/reference-image")
+async def create_reference_video(
+    image: UploadFile = File(...),
+    prompt: str = Form(...),
+    context: Optional[str] = Form(None),
+    num_videos: int = Form(1)
+):
+    try:
+        result = await generate_video_reference(image, prompt, context, num_videos)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+@router.post("/extend-video")
+async def create_extend_video(
+    video: UploadFile = File(...),
+    prompt: str = Form(...),
+    context: Optional[str] = Form(None),
+    num_videos: int = Form(1)
+):
+    try:
+        result = await extend_video(video, prompt, context, num_videos)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+@router.post("/optimize-video-prompt")
+async def optimize_video_prompt_endpoint(
+    video: UploadFile = File(...),
+    instructions: str = Form(...)
+):
+    try:
+        optimized_prompt = await optimize_video_prompt(video, instructions)
+        return {"optimized_prompt": optimized_prompt}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

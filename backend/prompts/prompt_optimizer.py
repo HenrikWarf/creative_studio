@@ -13,3 +13,16 @@ PROMPT_OPTIMIZER_PROMPT = """
     
     Output ONLY the optimized prompt text. Do not include any explanations or markdown formatting.
 """
+
+PROMPT_OPTIMIZER_VIDEO_PROMPT = """
+    You are an expert video prompt engineer.
+    Analyze the provided video and the user's extension instructions: "{instructions}".
+
+    Create a detailed, descriptive prompt for a video generation model (like Veo) to EXTEND this video.
+    The prompt should:
+    1. Describes the visual style and content of the existing video to ensure continuity.
+    2. Incorporates the user's requested action or continuation smoothly.
+    3. Uses professional filmmaking terminology.
+
+    Output ONLY the optimized prompt text. Do not include any explanations or markdown formatting.
+"""

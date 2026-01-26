@@ -4614,5 +4614,430 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Video Magic: Subject Reference ---
+    const dropZoneVmRef = document.getElementById('drop-zone-vm-ref');
+    const fileInputVmRef = document.getElementById('file-input-vm-ref');
+    const previewContainerVmRef = document.getElementById('preview-container-vm-ref');
+    const previewImgVmRef = document.getElementById('preview-img-vm-ref');
+    const btnRemoveImgVmRef = document.getElementById('btn-remove-img-vm-ref');
+
+    const vmRefPrompt = document.getElementById('vm-ref-prompt');
+    const vmRefContext = document.getElementById('vm-ref-context');
+    const btnClearContextVmRef = document.getElementById('btn-clear-context-vm-ref');
+    const btnGenerateVmRef = document.getElementById('btn-generate-vm-ref');
+    const vmRefResultContainer = document.getElementById('vm-ref-result-container');
+    const btnOptimizeVmRef = document.getElementById('btn-optimize-vm-ref');
+    const vmRefCountSlider = document.getElementById('vm-ref-count-slider');
+    const vmRefCountDisplay = document.getElementById('vm-ref-count-display');
+
+    // Context Accordion for Reference Tab
+    if (document.getElementById('btn-context-accordion-vm-ref')) {
+        setupContextAccordion('btn-context-accordion-vm-ref', 'context-content-vm-ref', 'context-checkboxes-vm-ref', 'btn-apply-context-vm-ref', 'vm-ref-context', 'vm-ref-context-version');
+    }
+
+    if (vmRefCountSlider && vmRefCountDisplay) {
+        vmRefCountSlider.addEventListener('input', (e) => {
+            vmRefCountDisplay.textContent = e.target.value;
+        });
+    }
+
+    let vmRefFile = null;
+
+    // Helper for Reference Image Upload
+    if (dropZoneVmRef && fileInputVmRef) {
+        dropZoneVmRef.addEventListener('click', () => fileInputVmRef.click());
+        dropZoneVmRef.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZoneVmRef.style.borderColor = 'var(--accent-color)';
+        });
+        dropZoneVmRef.addEventListener('dragleave', () => {
+            if (!vmRefFile) dropZoneVmRef.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+        });
+        dropZoneVmRef.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZoneVmRef.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+            if (e.dataTransfer.files.length) handleVmRefFile(e.dataTransfer.files[0]);
+        });
+        fileInputVmRef.addEventListener('change', (e) => {
+            if (e.target.files.length) handleVmRefFile(e.target.files[0]);
+        });
+    }
+
+    function handleVmRefFile(file) {
+        if (!file.type.startsWith('image/')) {
+            showAlert('Please select an image file.');
+            return;
+        }
+        vmRefFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImgVmRef.src = e.target.result;
+            previewImgVmRef.style.cursor = 'pointer';
+            previewImgVmRef.onclick = () => window.openSimpleLightbox(e.target.result);
+            dropZoneVmRef.style.display = 'none';
+            previewContainerVmRef.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    if (btnRemoveImgVmRef) {
+        btnRemoveImgVmRef.addEventListener('click', (e) => {
+            e.stopPropagation();
+            vmRefFile = null;
+            fileInputVmRef.value = '';
+            previewImgVmRef.src = '';
+            previewImgVmRef.onclick = null;
+            previewContainerVmRef.style.display = 'none';
+            dropZoneVmRef.style.display = 'flex';
+        });
+    }
+
+    if (btnClearContextVmRef) {
+        btnClearContextVmRef.addEventListener('click', () => {
+            const versionSpan = document.getElementById('vm-ref-context-version');
+            if (vmRefContext) vmRefContext.value = '';
+            if (versionSpan) versionSpan.textContent = '';
+        });
+    }
+
+    // Optimize Prompt
+    if (btnOptimizeVmRef) {
+        btnOptimizeVmRef.addEventListener('click', async () => {
+            const currentPrompt = vmRefPrompt.value;
+            if (!currentPrompt) {
+                showAlert('Please enter some initial instructions.');
+                return;
+            }
+
+            const originalBtnContent = btnOptimizeVmRef.innerHTML;
+            btnOptimizeVmRef.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enhancing...';
+            btnOptimizeVmRef.disabled = true;
+
+            try {
+                let response;
+                if (vmRefFile) {
+                    // Use Image-aware optimization
+                    const formData = new FormData();
+                    formData.append('image', vmRefFile);
+                    formData.append('instructions', currentPrompt);
+                    response = await fetch('/api/video-magic/optimize-prompt', {
+                        method: 'POST',
+                        body: formData
+                    });
+                } else {
+                    // Fallback, should upload image for reference generator
+                    showAlert('Please upload the Subject Image to allow AI to see what you are working with.');
+                    btnOptimizeVmRef.innerHTML = originalBtnContent;
+                    btnOptimizeVmRef.disabled = false;
+                    return;
+                }
+
+                if (response.ok) {
+                    const data = await response.json();
+                    vmRefPrompt.value = data.optimized_prompt;
+                } else {
+                    const err = await response.json();
+                    showAlert(`Error enhancing prompt: ${err.detail || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error(error);
+                showAlert(`Error: ${error.message}`);
+            } finally {
+                btnOptimizeVmRef.innerHTML = originalBtnContent;
+                btnOptimizeVmRef.disabled = false;
+            }
+        });
+    }
+
+    // Generate Button
+    if (btnGenerateVmRef) {
+        btnGenerateVmRef.addEventListener('click', async () => {
+            if (!vmRefFile) {
+                showAlert('Please upload a Subject Reference image.');
+                return;
+            }
+            if (!vmRefPrompt.value) {
+                showAlert('Please enter a prompt.');
+                return;
+            }
+
+            setLoading(btnGenerateVmRef, true);
+            vmRefResultContainer.innerHTML = `
+                <div class="loading-state">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-color);"></i>
+                    <p style="margin-top: 1rem;">Generating video from reference with Veo...</p>
+                </div>
+            `;
+
+            const formData = new FormData();
+            formData.append('image', vmRefFile);
+            formData.append('prompt', vmRefPrompt.value);
+            if (vmRefContext.value) {
+                formData.append('context', vmRefContext.value);
+            }
+            if (vmRefCountSlider) {
+                formData.append('num_videos', vmRefCountSlider.value);
+            }
+
+            try {
+                const response = await fetch('/api/video-magic/reference-image', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    vmRefResultContainer.innerHTML = '';
+                    vmRefResultContainer.style.display = 'grid';
+                    vmRefResultContainer.style.gridTemplateColumns = `repeat(${data.videos.length}, 1fr)`;
+                    vmRefResultContainer.style.gap = '1rem';
+
+                    data.videos.forEach((video, index) => {
+                        const card = document.createElement('div');
+                        card.className = 'video-card';
+                        card.innerHTML = `
+                            <video controls style="width: 100%; border-radius: 8px; margin-bottom: 0.5rem;" loop>
+                                <source src="${video.video_url}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                            <div class="video-actions" style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem;">
+                                <button class="action-btn" onclick="saveVideoToProject('${video.blob_name}', '${video.video_url}', document.getElementById('vm-ref-prompt').value, 'veo-3.1-ref-img', document.getElementById('vm-ref-context').value, window.activeContextVersionName || 'Custom / Draft', this)">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save
+                                </button>
+                                <a href="${video.video_url}" download="generated-ref-video-${index}.mp4" class="action-btn">
+                                    <i class="fa-solid fa-download"></i>
+                                </a>
+                            </div>
+                        `;
+                        vmRefResultContainer.appendChild(card);
+                    });
+                } else {
+                    const err = await response.json();
+                    vmRefResultContainer.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa-solid fa-triangle-exclamation" style="color: #ff4d4d;"></i>
+                            <p style="color: #ff4d4d;">Error: ${err.detail || 'Generation failed'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error(error);
+                vmRefResultContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #ff4d4d;"></i>
+                        <p style="color: #ff4d4d;">Error: ${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                setLoading(btnGenerateVmRef, false);
+            }
+        });
+    }
+
+
+
+    // --- Video Magic: Extend Video ---
+    const dropZoneVmExtend = document.getElementById('drop-zone-vm-extend');
+    const fileInputVmExtend = document.getElementById('file-input-vm-extend');
+    const previewContainerVmExtend = document.getElementById('preview-container-vm-extend');
+    const previewVideoVmExtend = document.getElementById('preview-video-vm-extend');
+    const btnRemoveVideoVmExtend = document.getElementById('btn-remove-video-vm-extend');
+
+    const vmExtendPrompt = document.getElementById('vm-extend-prompt');
+    const vmExtendContext = document.getElementById('vm-extend-context');
+    const btnClearContextVmExtend = document.getElementById('btn-clear-context-vm-extend');
+    const btnGenerateVmExtend = document.getElementById('btn-generate-vm-extend');
+    const vmExtendResultContainer = document.getElementById('vm-extend-result-container');
+    const btnOptimizeVmExtend = document.getElementById('btn-optimize-vm-extend');
+    const vmExtendCountSlider = document.getElementById('vm-extend-count-slider');
+    const vmExtendCountDisplay = document.getElementById('vm-extend-count-display');
+
+    // Context Accordion
+    if (document.getElementById('btn-context-accordion-vm-extend')) {
+        setupContextAccordion('btn-context-accordion-vm-extend', 'context-content-vm-extend', 'context-checkboxes-vm-extend', 'btn-apply-context-vm-extend', 'vm-extend-context', 'vm-extend-context-version');
+    }
+
+    if (vmExtendCountSlider && vmExtendCountDisplay) {
+        vmExtendCountSlider.addEventListener('input', (e) => {
+            vmExtendCountDisplay.textContent = e.target.value;
+        });
+    }
+
+    let vmExtendFile = null;
+
+    if (dropZoneVmExtend && fileInputVmExtend) {
+        dropZoneVmExtend.addEventListener('click', () => fileInputVmExtend.click());
+        dropZoneVmExtend.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZoneVmExtend.style.borderColor = 'var(--accent-color)';
+        });
+        dropZoneVmExtend.addEventListener('dragleave', () => {
+            if (!vmExtendFile) dropZoneVmExtend.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+        });
+        dropZoneVmExtend.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZoneVmExtend.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+            if (e.dataTransfer.files.length) handleVmExtendFile(e.dataTransfer.files[0]);
+        });
+        fileInputVmExtend.addEventListener('change', (e) => {
+            if (e.target.files.length) handleVmExtendFile(e.target.files[0]);
+        });
+    }
+
+    function handleVmExtendFile(file) {
+        if (!file.type.startsWith('video/')) {
+            showAlert('Please select a video file (MP4).');
+            return;
+        }
+        vmExtendFile = file;
+        const url = URL.createObjectURL(file);
+        previewVideoVmExtend.src = url;
+        dropZoneVmExtend.style.display = 'none';
+        previewContainerVmExtend.style.display = 'block';
+    }
+
+    if (btnRemoveVideoVmExtend) {
+        btnRemoveVideoVmExtend.addEventListener('click', (e) => {
+            e.stopPropagation();
+            vmExtendFile = null;
+            fileInputVmExtend.value = '';
+            previewVideoVmExtend.src = '';
+            previewContainerVmExtend.style.display = 'none';
+            dropZoneVmExtend.style.display = 'flex';
+        });
+    }
+
+    if (btnClearContextVmExtend) {
+        btnClearContextVmExtend.addEventListener('click', () => {
+            const versionSpan = document.getElementById('vm-extend-context-version');
+            if (vmExtendContext) vmExtendContext.value = '';
+            if (versionSpan) versionSpan.textContent = '';
+        });
+    }
+
+    // Optimize Prompt
+    if (btnOptimizeVmExtend) {
+        btnOptimizeVmExtend.addEventListener('click', async () => {
+            if (!vmExtendFile) {
+                showAlert('Please upload a video to optimize the prompt for.');
+                return;
+            }
+            if (!vmExtendPrompt.value) {
+                showAlert('Please enter a draft prompt or instructions.');
+                return;
+            }
+
+            const originalIcon = btnOptimizeVmExtend.innerHTML;
+            setLoading(btnOptimizeVmExtend, true);
+
+            const formData = new FormData();
+            formData.append('video', vmExtendFile);
+            formData.append('instructions', vmExtendPrompt.value);
+
+            try {
+                const response = await fetch('/api/video-magic/optimize-video-prompt', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    vmExtendPrompt.value = data.optimized_prompt;
+                } else {
+                    const err = await response.json();
+                    showAlert(`Optimization failed: ${err.detail}`);
+                }
+            } catch (error) {
+                console.error(error);
+                showAlert(`Error: ${error.message}`);
+            } finally {
+                setLoading(btnOptimizeVmExtend, false);
+                btnOptimizeVmExtend.innerHTML = originalIcon;
+            }
+        });
+    }
+
+    // Generate
+    if (btnGenerateVmExtend) {
+        btnGenerateVmExtend.addEventListener('click', async () => {
+            if (!vmExtendFile) {
+                showAlert('Please upload a video to extend.');
+                return;
+            }
+            if (!vmExtendPrompt.value) {
+                showAlert('Please enter a prompt.');
+                return;
+            }
+
+            setLoading(btnGenerateVmExtend, true);
+            vmExtendResultContainer.innerHTML = `
+                <div class="loading-state">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent-color);"></i>
+                    <p style="margin-top: 1rem;">Extending video with Veo...</p>
+                </div>
+            `;
+
+            const formData = new FormData();
+            formData.append('video', vmExtendFile);
+            formData.append('prompt', vmExtendPrompt.value);
+            if (vmExtendContext.value) formData.append('context', vmExtendContext.value);
+            if (vmExtendCountSlider) formData.append('num_videos', vmExtendCountSlider.value);
+
+            try {
+                const response = await fetch('/api/video-magic/extend-video', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    vmExtendResultContainer.innerHTML = '';
+                    vmExtendResultContainer.style.display = 'grid';
+                    vmExtendResultContainer.style.gridTemplateColumns = `repeat(${data.videos.length}, 1fr)`;
+                    vmExtendResultContainer.style.gap = '1rem';
+
+                    data.videos.forEach((video, index) => {
+                        const card = document.createElement('div');
+                        card.className = 'video-card';
+                        card.innerHTML = `
+                            <video controls style="width: 100%; border-radius: 8px; margin-bottom: 0.5rem;" loop>
+                                <source src="${video.video_url}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                            <div class="video-actions" style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem;">
+                                <button class="action-btn" onclick="saveVideoToProject('${video.blob_name}', '${video.video_url}', document.getElementById('vm-extend-prompt').value, 'veo-3.1-extend', document.getElementById('vm-extend-context').value, window.activeContextVersionName || 'Custom / Draft', this)">
+                                    <i class="fa-solid fa-floppy-disk"></i> Save
+                                </button>
+                                <a href="${video.video_url}" download="extended-video-${index}.mp4" class="action-btn">
+                                    <i class="fa-solid fa-download"></i>
+                                </a>
+                            </div>
+                        `;
+                        vmExtendResultContainer.appendChild(card);
+                    });
+                } else {
+                    const err = await response.json();
+                    vmExtendResultContainer.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa-solid fa-triangle-exclamation" style="color: #ff4d4d;"></i>
+                            <p style="color: #ff4d4d;">Error: ${err.detail || 'Generation failed'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error(error);
+                vmExtendResultContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #ff4d4d;"></i>
+                        <p style="color: #ff4d4d;">Error: ${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                setLoading(btnGenerateVmExtend, false);
+            }
+        });
+    }
+
 });
 
