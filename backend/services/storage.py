@@ -27,7 +27,8 @@ def upload_file(file_obj, destination_blob_name: str, content_type: str = None) 
 
     except Exception as e:
         print(f"Error uploading to GCS: {e}")
-        return f"Error: {e}"
+        # Raise the exception so it can be handled by the caller
+        raise e
 
 def generate_signed_url(blob_name: str) -> str:
     """Generates a signed URL for a blob."""

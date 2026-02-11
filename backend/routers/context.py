@@ -10,12 +10,12 @@ import os
 import json
 from datetime import datetime
 
+from backend.services.image_creation import get_client
+
 router = APIRouter(
     prefix="/context",
     tags=["context"]
 )
-
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 class GenerateRequest(BaseModel):
     goal: str
@@ -67,6 +67,7 @@ async def generate_context(request: GenerateRequest):
     """
     
     try:
+        client = get_client()
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
@@ -102,6 +103,7 @@ async def enhance_field(request: EnhanceFieldRequest):
     """
     
     try:
+        client = get_client()
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
@@ -129,6 +131,7 @@ async def analyze_brand(request: AnalyzeRequest):
     """
     
     try:
+        client = get_client()
         # Configure Google Search Grounding
         grounding_tool = types.Tool(
             google_search=types.GoogleSearch()
@@ -253,6 +256,7 @@ async def analyze_file(
         # Determine mime type
         mime_type = file.content_type or "application/octet-stream"
         
+        client = get_client()
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=[
@@ -304,6 +308,7 @@ async def synthesize_context(request: SynthesizeRequest):
     """
     
     try:
+        client = get_client()
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
@@ -336,6 +341,7 @@ async def get_prompt_insight(request: PromptInsightRequest):
     """
     
     try:
+        client = get_client()
         response = client.models.generate_content(
             model="gemini-2.0-flash-exp",
             contents=prompt,

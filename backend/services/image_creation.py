@@ -25,7 +25,7 @@ def get_client(location=None):
 
 async def generate_image(
     prompt: str,
-    model_name: str = "gemini-2.5-flash-image", # Or specific image model
+    model_name: str = "gemini-2.5-flash-image", # Default to speed
     style: Optional[str] = None,
     reference_images: Optional[List[UploadFile]] = None,
     style_images: Optional[List[UploadFile]] = None,
@@ -63,41 +63,40 @@ async def generate_image(
     await process_images(scene_images, "Place the subject or product within the environment shown in these images. Match the lighting, perspective, and background details:")
     await process_images(reference_images, "Use these images as general visual references:")
 
-    # Note: The exact API for image generation in the new SDK might differ.
-    # Assuming standard generate_content or a specific image method.
-    # If it's the Imagen model via Gemini API, it might be different.
-    # But Gemini 2.5 is multimodal.
-    
-    # For "Image Creation", we might be using Imagen 3 or Gemini's image generation capabilities.
-    # The user said "Gemini 2.5 Flash Image".
-    
     generated_urls = []
     
     # Loop for multiple images
     for _ in range(num_images):
         try:
             current_model_name = model_name
-            client_location = None
+            client_location = None 
             
-            # Gemini 3 Preview specific logic
+            # Model Specific Logic
             if model_name == "gemini-3-pro-image-preview":
-                current_model_name = "publishers/google/models/gemini-3-pro-image-preview"
-                client_location = "global"
-
+                 client_location = "global" # User specified global location for this model
+                 current_model_name = "publishers/google/models/gemini-3-pro-image-preview"
+            
             client = get_client(location=client_location)
             
             # Configuration
-            config = None
+            config = types.GenerateContentConfig(
+                temperature=1,
+                top_p=0.95,
+                max_output_tokens=8192,
+                response_modalities=["IMAGE"],
+            )
+
+            # Specific config for Gemini 3
             if model_name == "gemini-3-pro-image-preview":
                  config = types.GenerateContentConfig(
                     temperature=1,
                     top_p=0.95,
                     max_output_tokens=32768,
-                    response_modalities=["TEXT", "IMAGE"],
+                    response_modalities=["TEXT", "IMAGE"], # Gemini 3 is multimodal output often
                     image_config=types.ImageConfig(
-                        aspect_ratio="1:1", # Default to 1:1 or logic to infer from prompt? User snippet hardcodes 1:1
-                        image_size="1K",
-                        output_mime_type="image/png",
+                         aspect_ratio="1:1",
+                         image_size="1K",
+                         output_mime_type="image/png"
                     )
                  )
             
@@ -134,9 +133,6 @@ async def generate_image(
             
         except Exception as e:
             print(f"Error generating image {_}: {e}")
-            # Continue or raise? Let's continue and return what we have, or raise if all fail.
-            # For now, let's raise to be safe, or we could return partial results.
-            # Raising ensures the user knows something went wrong.
             raise e
     
     return generated_urls
@@ -177,7 +173,7 @@ async def edit_image(
         contents.append(types.Part(
             inline_data=types.Blob(
                 data=image_data, 
-                mime_type="image/png" # Assuming PNG for simplicity or detect
+                mime_type="image/png" 
             )
         ))
         
@@ -188,15 +184,18 @@ async def edit_image(
                 current_model_name = model_name
                 client_location = None
 
-                # Gemini 3 Preview specific logic
                 if model_name == "gemini-3-pro-image-preview":
-                    current_model_name = "publishers/google/models/gemini-3-pro-image-preview"
                     client_location = "global"
+                    current_model_name = "publishers/google/models/gemini-3-pro-image-preview"
 
                 client = get_client(location=client_location)
 
-                # Configuration for Gemini 3 support
-                config = None
+                # Configuration
+                config = types.GenerateContentConfig(
+                     response_modalities=["IMAGE"],
+                     temperature=1
+                )
+                
                 if model_name == "gemini-3-pro-image-preview":
                         config = types.GenerateContentConfig(
                         temperature=1,

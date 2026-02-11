@@ -74,17 +74,17 @@
                 <div class="home-container">
                     <div class="hero-content">
                         <h1>Welcome to Creative Studio</h1>
-                        <p>Your AI-powered workspace for fashion content creation.</p>
+                        <p>Your AI-powered workspace for professional content creation.</p>
                         <div class="features-grid">
                             <div class="feature-item feature-link" data-target="image-creation">
                                 <i class="fa-solid fa-wand-magic-sparkles"></i>
                                 <h3>Image Creation</h3>
-                                <p>Generate stunning fashion imagery with Gemini</p>
+                                <p>Generate stunning creative imagery with Gemini</p>
                             </div>
                             <div class="feature-item feature-link" data-target="virtual-tryon">
                                 <i class="fa-solid fa-shirt"></i>
                                 <h3>Virtual Try-on</h3>
-                                <p>Visualize garments on models instantly</p>
+                                <p>Visualize products in context instantly</p>
                             </div>
                             <div class="feature-item feature-link" data-target="video-creation">
                                 <i class="fa-solid fa-video"></i>
@@ -1414,7 +1414,7 @@
                                 <div class="input-group">
                                     <label>Project Goal</label>
                                     <textarea id="input-goal"
-                                        placeholder="e.g. Create a summer campaign for a luxury sneaker brand targeting Gen Z..."
+                                        placeholder="e.g. Create a summer campaign for a new beverage brand targeting Gen Z..."
                                         style="height: 100px;"></textarea>
                                     <small class="text-muted" style="display: block; margin-top: 5px;">(Generates
                                         Project Specifics and Overall Context)</small>
@@ -1903,7 +1903,7 @@
                         <label>Style</label>
                         <select id="edit-style-modal">
                             <option value="">No specific style</option>
-                            <optgroup label="Fashion & Aesthetic">
+                            <optgroup label="Aesthetic & Style">
                                 <option value="Editorial High Fashion">Editorial / High Fashion</option>
                                 <option value="Luxury Glamour">Luxury / Glamour</option>
                                 <option value="Street Style">Street Style</option>
@@ -1929,8 +1929,43 @@
                             </optgroup>
                         </select>
                     </div>
+
+                    <!-- Context Accordion -->
+                    <div class="glass-panel full-width"
+                        style="padding: 0; box-shadow: none; border: 1px solid var(--border-color); background: rgba(255,255,255,0.02);">
+                        <button class="accordion-header" id="btn-context-accordion-edit-modal"
+                            style="padding: 10px; font-size: 0.9rem;">
+                            <span><i class="fa-solid fa-layer-group"></i> Context <small class="text-muted"
+                                    style="font-size: 0.8em;">(Apply)</small></span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                        <div class="accordion-content" id="context-content-edit-modal" hidden>
+                            <div style="padding: 10px;">
+                                <div id="context-checkboxes-edit-modal"
+                                    style="display: flex; flex-direction: column; gap: 8px;">
+                                </div>
+                                <button id="btn-apply-context-edit-modal" class="secondary-btn small-btn full-width"
+                                    style="margin-top: 10px;">
+                                    Apply to Instruction
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="input-group">
-                        <label>Edit Instruction</label>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <label style="margin-bottom: 0;">Edit Instruction</label>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <span id="edit-context-version"
+                                    style="font-size: 0.7rem; color: var(--accent-color);"></span>
+                                <button id="btn-clear-context-edit-modal" class="small-delete-btn"
+                                    title="Remove Context"
+                                    style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer;">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
                         <textarea id="edit-instruction" placeholder="e.g. Make it black and white..."
                             style="height: 100px;"></textarea>
                     </div>
@@ -2056,7 +2091,9 @@
             </div>
         </div>
     </div>
-    <script src="script.js"></script>
+    <!-- Main Application Logic (Modularized) -->
+    <script type="module" src="js/app.js"></script>
+    <!-- <script src="script.js"></script> -->
 </body>
 
 </html>

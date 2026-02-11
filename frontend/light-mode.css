@@ -271,6 +271,11 @@ body.light-mode .video-actions .action-btn:hover {
     background: rgba(0, 0, 0, 0.05);
 }
 
+.metadata-item strong {
+    color: black !important;
+    font-weight: 700 !important;
+}
+
 /* Modal Styles */
 body.light-mode .modal-content {
     background: #ffffff;

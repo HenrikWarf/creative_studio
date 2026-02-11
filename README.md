@@ -1,6 +1,6 @@
 # Creative Studio
 
-Creative Studio is a comprehensive web application designed for fashion content creation. It leverages advanced AI models (Gemini 2.5, Veo) to streamline the workflow from ideation to asset generation.
+Creative Studio is a comprehensive web application designed for professional content creation. It leverages advanced AI models (Gemini 2.5, Veo) to streamline the workflow from ideation to asset generation.
 
 ## Key Features
 
@@ -13,7 +13,7 @@ Creative Studio is a comprehensive web application designed for fashion content 
     -   **Prompt Synthesis**: Automatically generates detailed prompts based on your defined context.
 
 ### 2. Image Creation
--   **Text-to-Image**: Generate high-quality fashion images using Gemini 2.5.
+-   **Text-to-Image**: Generate high-quality creative images using Gemini 2.5.
 -   **Multi-Image Generation**: Generate 1-3 images simultaneously to explore variations.
 -   **Reference Inputs**: Upload Style, Product, and Scene reference images to guide the generation.
 -   **Style Presets**: Choose from predefined styles (e.g., Cinematic, Studio, Neon) or define your own.
@@ -24,7 +24,7 @@ Creative Studio is a comprehensive web application designed for fashion content 
 -   **Context-Aware**: Uses your project's context to ensure edits align with the brand voice.
 
 ### 4. Virtual Try-On (VTO)
--   **Garment Transfer**: Visualize clothing items on models.
+-   **Product Visualization**: Visualize products in context (e.g., garments on models, furniture in rooms).
 -   **Multi-Garment**: Try on multiple garments sequentially.
 
 ### 5. Video Creation

@@ -1,0 +1,109 @@
+
+import os
+import json
+import time
+from typing import List, Dict, Optional
+from google import genai
+from google.genai import types
+from backend.prompts.video_script_writer import VIDEO_SCRIPT_WRITER_PROMPT
+from backend.prompts.video_script_editor import VIDEO_SCRIPT_EDITOR_PROMPT
+
+async def generate_script(prompt: str, context: str = None) -> List[Dict[str, str]]:
+    """
+    Generates a video script using Gemini 2.5 Flash.
+    Returns a list of scenes, each with 'visual' and 'audio' keys.
+    """
+    if os.getenv("GOOGLE_GENAI_USE_VERTEXAI") == "True":
+        client = genai.Client(
+            vertexai=True,
+            project=os.getenv("GOOGLE_CLOUD_PROJECT"),
+            location=os.getenv("GOOGLE_CLOUD_LOCATION")
+        )
+        print("DEBUG: Using Vertex AI for script generation")
+    else:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise Exception("GEMINI_API_KEY not found")
+        client = genai.Client(api_key=api_key)
+        print("DEBUG: Using Gemini API for script generation")
+    
+    full_prompt = VIDEO_SCRIPT_WRITER_PROMPT.format(
+        prompt=prompt,
+        context_section=f"Context / Brand Guidelines:\n{context}\n\nPlease ensure the script aligns with these guidelines." if context else ""
+    )
+    
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=full_prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type='application/json'
+            )
+        )
+        
+        script_json = json.loads(response.text)
+        return script_json
+
+    except Exception as e:
+        print(f"Error generating script: {e}")
+        try:
+            print("Falling back to gemini-2.5-flash...")
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=full_prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type='application/json'
+                )
+            )
+            script_json = json.loads(response.text)
+            return script_json
+        except Exception as e2:
+             raise Exception(f"Failed to generate script: {e2}")
+
+async def edit_script(current_script: List[Dict[str, str]], instructions: str) -> List[Dict[str, str]]:
+    """
+    Edits an existing script based on user instructions.
+    """
+    if os.getenv("GOOGLE_GENAI_USE_VERTEXAI") == "True":
+        client = genai.Client(
+            vertexai=True,
+            project=os.getenv("GOOGLE_CLOUD_PROJECT"),
+            location=os.getenv("GOOGLE_CLOUD_LOCATION")
+        )
+        print("DEBUG: Using Vertex AI for script editing")
+    else:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise Exception("GEMINI_API_KEY not found")
+        client = genai.Client(api_key=api_key)
+        print("DEBUG: Using Gemini API for script editing")
+    
+    full_prompt = VIDEO_SCRIPT_EDITOR_PROMPT.format(
+        current_script_json=json.dumps(current_script, indent=2),
+        instructions=instructions
+    )
+    
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=full_prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type='application/json'
+            )
+        )
+        
+        script_json = json.loads(response.text)
+        return script_json
+    except Exception as e:
+        try:
+            response = client.models.generate_content(
+                model='gemini-1.5-flash',
+                contents=full_prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type='application/json'
+                )
+            )
+            script_json = json.loads(response.text)
+            return script_json
+        except Exception as e2:
+             raise Exception(f"Failed to edit script: {e2}")
