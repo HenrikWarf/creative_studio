@@ -9,6 +9,7 @@ import base64
 from backend.services.storage import upload_bytes
 from backend import models
 from sqlalchemy.orm import Session
+from backend.config import config
 
 def get_client(location=None):
     if os.getenv("GOOGLE_GENAI_USE_VERTEXAI") == "True":
@@ -25,7 +26,7 @@ def get_client(location=None):
 
 async def generate_image(
     prompt: str,
-    model_name: str = "gemini-2.5-flash-image", # Default to speed
+    model_name: str = config.MODEL_IMAGE_FAST, # Default to speed
     style: Optional[str] = None,
     reference_images: Optional[List[UploadFile]] = None,
     style_images: Optional[List[UploadFile]] = None,
@@ -74,7 +75,7 @@ async def generate_image(
             # Model Specific Logic
             if model_name == "gemini-3-pro-image-preview":
                  client_location = "global" # User specified global location for this model
-                 current_model_name = "publishers/google/models/gemini-3-pro-image-preview"
+                 current_model_name = config.MODEL_IMAGE_HIGH_QUALITY
             
             client = get_client(location=client_location)
             
@@ -143,7 +144,7 @@ async def edit_image(
     instruction: str,
     style: Optional[str] = None,
     reference_images: Optional[List[UploadFile]] = None,
-    model_name: str = "gemini-2.5-flash-image",
+    model_name: str = config.MODEL_IMAGE_FAST,
     num_images: int = 1
 ) -> List[str]:
     """
@@ -186,7 +187,7 @@ async def edit_image(
 
                 if model_name == "gemini-3-pro-image-preview":
                     client_location = "global"
-                    current_model_name = "publishers/google/models/gemini-3-pro-image-preview"
+                    current_model_name = config.MODEL_IMAGE_HIGH_QUALITY
 
                 client = get_client(location=client_location)
 
@@ -289,7 +290,7 @@ async def save_image_asset(
 
 async def optimize_prompt_text(
     prompt: str,
-    model_name: str = "gemini-2.5-flash"
+    model_name: str = config.MODEL_TEXT_FAST
 ) -> str:
     """
     Optimizes a prompt for image generation using Gemini.

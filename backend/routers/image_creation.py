@@ -1,11 +1,13 @@
+
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
-from backend.services.image_creation import generate_image, edit_image
+from backend.services.image_creation import generate_image, edit_image, optimize_prompt_text, save_image_asset
 from backend.database import get_db
 from sqlalchemy.orm import Session
 from backend import models
 from fastapi import Depends
+from backend.config import config
 
 router = APIRouter(
     prefix="/image-creation",
@@ -21,7 +23,7 @@ async def generate(
     product_images: List[UploadFile] = File(None),
     scene_images: List[UploadFile] = File(None),
     project_id: Optional[int] = Form(None),
-    model_name: Optional[str] = Form("gemini-2.5-flash-image"),
+    model_name: Optional[str] = Form(config.MODEL_IMAGE_FAST),
     num_images: int = Form(1),
     db: Session = Depends(get_db)
 ):
@@ -54,7 +56,7 @@ async def edit(
     instruction: str = Form(...),
     style: Optional[str] = Form(None),
     reference_images: List[UploadFile] = File(None),
-    model_name: Optional[str] = Form("gemini-2.5-flash-image"),
+    model_name: Optional[str] = Form(config.MODEL_IMAGE_FAST),
     num_images: int = Form(1)
 ):
     try:
@@ -135,7 +137,7 @@ async def save(
 
 class OptimizeRequest(BaseModel):
     prompt: str
-    model_name: Optional[str] = "gemini-2.5-flash"
+    model_name: Optional[str] = config.MODEL_TEXT_FAST
 
 @router.post("/optimize")
 async def optimize_prompt(

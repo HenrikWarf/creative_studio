@@ -4,6 +4,7 @@ import time
 from fastapi import UploadFile
 from google import genai
 from google.genai import types
+from backend.config import config
 from backend.prompts.prompt_optimizer import PROMPT_OPTIMIZER_PROMPT, PROMPT_OPTIMIZER_VIDEO_PROMPT
 from backend.prompts.product_motion import PRODUCT_MOTION_PROMPTS
 
@@ -32,7 +33,7 @@ async def optimize_image_prompt(image: UploadFile, instructions: str) -> str:
 
     try:
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model=config.MODEL_TEXT_FAST,
             contents=[
                 prompt,
                 types.Part.from_bytes(data=image_bytes, mime_type=image.content_type)
@@ -81,7 +82,7 @@ async def optimize_video_prompt(video: UploadFile, instructions: str) -> str:
         prompt = PROMPT_OPTIMIZER_VIDEO_PROMPT.format(instructions=instructions)
         
         response = client.models.generate_content(
-            model="gemini-1.5-pro-002",
+            model=config.MODEL_TEXT_HIGH_QUALITY,
             contents=[uploaded_file, prompt]
         )
         

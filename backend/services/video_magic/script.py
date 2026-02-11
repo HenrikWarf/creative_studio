@@ -1,10 +1,11 @@
-
 import os
 import json
 import time
 from typing import List, Dict, Optional
+from backend.services.image_creation import get_client
 from google import genai
 from google.genai import types
+from backend.config import config
 from backend.prompts.video_script_writer import VIDEO_SCRIPT_WRITER_PROMPT
 from backend.prompts.video_script_editor import VIDEO_SCRIPT_EDITOR_PROMPT
 
@@ -34,7 +35,7 @@ async def generate_script(prompt: str, context: str = None) -> List[Dict[str, st
     
     try:
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model=config.MODEL_TEXT_FAST,
             contents=full_prompt,
             config=types.GenerateContentConfig(
                 response_mime_type='application/json'
@@ -47,9 +48,9 @@ async def generate_script(prompt: str, context: str = None) -> List[Dict[str, st
     except Exception as e:
         print(f"Error generating script: {e}")
         try:
-            print("Falling back to gemini-2.5-flash...")
+            print(f"Falling back to {config.MODEL_TEXT_FAST}...")
             response = client.models.generate_content(
-                model='gemini-2.5-flash',
+                model=config.MODEL_TEXT_FAST,
                 contents=full_prompt,
                 config=types.GenerateContentConfig(
                     response_mime_type='application/json'

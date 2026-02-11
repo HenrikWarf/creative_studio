@@ -11,6 +11,7 @@ import json
 from datetime import datetime
 
 from backend.services.image_creation import get_client
+from backend.config import config
 
 router = APIRouter(
     prefix="/context",
@@ -258,7 +259,7 @@ async def analyze_file(
         
         client = get_client()
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model=config.MODEL_TEXT_FAST,
             contents=[
                 types.Part.from_bytes(data=content, mime_type=mime_type),
                 prompt
@@ -343,7 +344,7 @@ async def get_prompt_insight(request: PromptInsightRequest):
     try:
         client = get_client()
         response = client.models.generate_content(
-            model="gemini-2.0-flash-exp",
+            model=config.MODEL_INSIGHTS,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"
