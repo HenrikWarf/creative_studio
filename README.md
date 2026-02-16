@@ -2,6 +2,8 @@
 
 Creative Studio is a high-performance web application designed for professional content creation. It leverages Google's state-of-the-art AI models (Gemini 3, Gemini 2.5, Veo) to provide a seamless, high-speed workflow for asset generation, editing, and brand management.
 
+![Creative Studio Overview](overview_image.png)
+
 ## Key Features
 
 ### 1. Project Management & Context Engineering
