@@ -30,7 +30,7 @@ def upload_file(file_obj, destination_blob_name: str, content_type: str = None) 
         # Raise the exception so it can be handled by the caller
         raise e
 
-def generate_signed_url(blob_name: str) -> str:
+def generate_signed_url(blob_name: str, download_name: str = None) -> str:
     """Generates a signed URL for a blob."""
     try:
         if blob_name.startswith("Error"):
@@ -39,11 +39,16 @@ def generate_signed_url(blob_name: str) -> str:
         bucket = storage_client.bucket(BUCKET_NAME)
         blob = bucket.blob(blob_name)
         
-        url = blob.generate_signed_url(
-            version="v4",
-            expiration=datetime.timedelta(hours=1),
-            method="GET"
-        )
+        kwargs = {
+            "version": "v4",
+            "expiration": datetime.timedelta(hours=1),
+            "method": "GET"
+        }
+        
+        if download_name:
+            kwargs["response_disposition"] = f'attachment; filename="{download_name}"'
+            
+        url = blob.generate_signed_url(**kwargs)
         return url
     except Exception as e:
         print(f"Error generating signed URL: {e}")

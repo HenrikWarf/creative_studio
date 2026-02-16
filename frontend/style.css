@@ -1646,3 +1646,66 @@ input:checked+.slider:before {
 .tab-content.active {
     display: block;
 }
+
+/* Asset Card Overlay Actions */
+.asset-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.asset-actions-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+}
+
+.asset-card:hover .asset-actions-overlay {
+    opacity: 1;
+}
+
+.asset-actions-overlay .icon-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.asset-actions-overlay .icon-btn:hover {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    transform: scale(1.1);
+}
+
+.play-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    color: white;
+    pointer-events: none;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    opacity: 0.8;
+}
+
+.asset-card:hover .play-icon {
+    opacity: 0;
+    /* Hide play icon when overlay appears */
+}

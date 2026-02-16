@@ -12,6 +12,7 @@ export function initImageCreation() {
     const imgCountSlider = document.getElementById('img-count-slider');
     const imgCountDisplay = document.getElementById('img-count-display');
     const imgResultContainer = document.getElementById('img-result-container');
+    const btnOptimizeImg = document.getElementById('btn-optimize-img');
 
     // Initialize Context Accordion
     setupContextAccordion('btn-context-accordion-img', 'context-content-img', 'context-checkboxes-img', 'btn-apply-context-img', 'img-context', 'img-context-version', 'btn-clear-context-img');
@@ -100,6 +101,38 @@ export function initImageCreation() {
             resetInput(imgProductFilesInput, imgProductPreviewList, imgProductUploadArea, 'badge-product', 'Upload Product Image');
             resetInput(imgSceneFilesInput, imgScenePreviewList, imgSceneUploadArea, 'badge-scene', 'Upload Scene Image');
             imgResultContainer.innerHTML = '<i class="fa-regular fa-image"></i><p>Generated image will appear here</p>';
+        });
+    }
+
+    if (btnOptimizeImg) {
+        btnOptimizeImg.addEventListener('click', async () => {
+            if (!imgPrompt.value) { showAlert('Please enter a prompt to enhance'); return; }
+
+            const originalContent = btnOptimizeImg.innerHTML;
+            btnOptimizeImg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btnOptimizeImg.disabled = true;
+
+            try {
+                const response = await fetch('/image-creation/optimize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: imgPrompt.value })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    imgPrompt.value = data.optimized_prompt;
+                } else {
+                    const err = await response.json();
+                    showAlert('Error: ' + err.detail);
+                }
+            } catch (e) {
+                console.error(e);
+                showAlert('An error occurred during enhancement');
+            } finally {
+                btnOptimizeImg.innerHTML = originalContent;
+                btnOptimizeImg.disabled = false;
+            }
         });
     }
 

@@ -78,7 +78,7 @@ export function initReference() {
                     const formData = new FormData();
                     formData.append('image', vmRefFile);
                     formData.append('instructions', currentPrompt);
-                    const response = await fetch('/api/video-magic/optimize-prompt', { method: 'POST', body: formData });
+                    const response = await fetch('/video-magic/optimize-prompt', { method: 'POST', body: formData });
                     if (response.ok) {
                         const data = await response.json();
                         vmRefPrompt.value = data.optimized_prompt;
@@ -113,7 +113,7 @@ export function initReference() {
             if (vmRefCountSlider) formData.append('num_videos', vmRefCountSlider.value);
 
             try {
-                const response = await fetch('/api/video-magic/reference-image', { method: 'POST', body: formData });
+                const response = await fetch('/video-magic/reference-image', { method: 'POST', body: formData });
                 if (response.ok) {
                     const data = await response.json();
                     vmRefResultContainer.innerHTML = '';
@@ -132,7 +132,7 @@ export function initReference() {
                                 <button class="action-btn" onclick="saveVideoToProject('${video.blob_name}', '${video.video_url}', document.getElementById('vm-ref-prompt').value, 'veo-3.1-ref-img', document.getElementById('vm-ref-context').value, window.activeContextVersionName || 'Custom / Draft', this)">
                                     <i class="fa-solid fa-floppy-disk"></i> Save
                                 </button>
-                                <a href="${video.video_url}" download="ref-video-${index}.mp4" class="action-btn">
+                                <a href="${video.download_url || video.video_url}" download="ref-video-${index}.mp4" class="action-btn">
                                     <i class="fa-solid fa-download"></i>
                                 </a>
                             </div>

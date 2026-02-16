@@ -28,6 +28,7 @@ async def generate_script(prompt: str, context: str = None) -> List[Dict[str, st
         client = genai.Client(api_key=api_key)
         print("DEBUG: Using Gemini API for script generation")
     
+    
     full_prompt = VIDEO_SCRIPT_WRITER_PROMPT.format(
         prompt=prompt,
         context_section=f"Context / Brand Guidelines:\n{context}\n\nPlease ensure the script aligns with these guidelines." if context else ""
@@ -38,11 +39,43 @@ async def generate_script(prompt: str, context: str = None) -> List[Dict[str, st
             model=config.MODEL_TEXT_FAST,
             contents=full_prompt,
             config=types.GenerateContentConfig(
-                response_mime_type='application/json'
+                response_mime_type='application/json',
+                response_schema={
+                    "type": "OBJECT",
+                    "properties": {
+                        "global_elements": {
+                            "type": "OBJECT",
+                            "properties": {
+                                "character": {"type": "STRING"},
+                                "visual_style": {"type": "STRING"},
+                                "audio_vibe": {"type": "STRING"},
+                                "costume": {"type": "STRING"},
+                                "color_palette": {"type": "STRING"},
+                                "set_design": {"type": "STRING"},
+                                "objects_props": {"type": "STRING"},
+                                "filming_techniques": {"type": "STRING"},
+                                "voice": {"type": "STRING"},
+                            },
+                        },
+                        "scenes": {
+                            "type": "ARRAY",
+                            "items": {
+                                "type": "OBJECT",
+                                "properties": {
+                                    "visual": {"type": "STRING"},
+                                    "audio": {"type": "STRING"},
+                                },
+                                "required": ["visual", "audio"]
+                            }
+                        }
+                    },
+                    "required": ["global_elements", "scenes"]
+                }
             )
         )
         
-        script_json = json.loads(response.text)
+        cleaned_json = clean_json_string(response.text)
+        script_json = json.loads(cleaned_json)
         return script_json
 
     except Exception as e:
@@ -56,10 +89,36 @@ async def generate_script(prompt: str, context: str = None) -> List[Dict[str, st
                     response_mime_type='application/json'
                 )
             )
-            script_json = json.loads(response.text)
+            cleaned_json = clean_json_string(response.text)
+            script_json = json.loads(cleaned_json)
             return script_json
         except Exception as e2:
+             print(f"Fallback failed: {e2}")
+             # Last ditch effort: Try to parse whatever we got
+             try:
+                 if response and response.text:
+                    cleaned = clean_json_string(response.text)
+                    return json.loads(cleaned)
+             except:
+                 pass
              raise Exception(f"Failed to generate script: {e2}")
+
+def clean_json_string(json_string: str) -> str:
+    """
+    Cleans a JSON string from Markdown formatting.
+    """
+    if not json_string:
+        return ""
+    
+    cleaned = json_string.strip()
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[7:]
+    if cleaned.startswith("```"):
+        cleaned = cleaned[3:]
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    
+    return cleaned.strip()
 
 async def edit_script(current_script: List[Dict[str, str]], instructions: str) -> List[Dict[str, str]]:
     """
@@ -89,11 +148,23 @@ async def edit_script(current_script: List[Dict[str, str]], instructions: str) -
             model='gemini-2.5-flash',
             contents=full_prompt,
             config=types.GenerateContentConfig(
-                response_mime_type='application/json'
+                response_mime_type='application/json',
+                response_schema={
+                     "type": "ARRAY",
+                     "items": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "visual": {"type": "STRING"},
+                            "audio": {"type": "STRING"},
+                        },
+                        "required": ["visual", "audio"]
+                    }
+                }
             )
         )
         
-        script_json = json.loads(response.text)
+        cleaned_json = clean_json_string(response.text)
+        script_json = json.loads(cleaned_json)
         return script_json
     except Exception as e:
         try:
@@ -104,7 +175,8 @@ async def edit_script(current_script: List[Dict[str, str]], instructions: str) -
                     response_mime_type='application/json'
                 )
             )
-            script_json = json.loads(response.text)
+            cleaned_json = clean_json_string(response.text)
+            script_json = json.loads(cleaned_json)
             return script_json
         except Exception as e2:
              raise Exception(f"Failed to edit script: {e2}")

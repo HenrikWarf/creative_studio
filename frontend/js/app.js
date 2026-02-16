@@ -8,7 +8,7 @@ import { initImageEditing } from './modules/image-editing.js';
 import { initVirtualTryOn } from './modules/virtual-try-on.js';
 import { initVideoCreation } from './modules/video-creation.js';
 import { initLightbox } from './modules/lightbox.js';
-import { updateToggleIcon, closeAlertModal } from './utils.js';
+import { updateToggleIcon, closeAlertModal, initTabState } from './utils.js';
 
 // Basic UI Setup
 initNavigation();

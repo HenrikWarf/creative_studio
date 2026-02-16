@@ -72,7 +72,7 @@ export function initExtend() {
             formData.append('instructions', vmExtendPrompt.value);
 
             try {
-                const response = await fetch('/api/video-magic/optimize-video-prompt', { method: 'POST', body: formData });
+                const response = await fetch('/video-magic/optimize-video-prompt', { method: 'POST', body: formData });
                 if (response.ok) {
                     const data = await response.json();
                     vmExtendPrompt.value = data.optimized_prompt;
@@ -104,7 +104,7 @@ export function initExtend() {
             if (vmExtendCountSlider) formData.append('num_videos', vmExtendCountSlider.value);
 
             try {
-                const response = await fetch('/api/video-magic/extend-video', { method: 'POST', body: formData });
+                const response = await fetch('/video-magic/extend-video', { method: 'POST', body: formData });
                 if (response.ok) {
                     const data = await response.json();
                     vmExtendResultContainer.innerHTML = '';
@@ -123,7 +123,7 @@ export function initExtend() {
                                 <button class="action-btn" onclick="saveVideoToProject('${video.blob_name}', '${video.video_url}', document.getElementById('vm-extend-prompt').value, 'veo-3.1-extend', document.getElementById('vm-extend-context').value, window.activeContextVersionName || 'Custom / Draft', this)">
                                     <i class="fa-solid fa-floppy-disk"></i> Save
                                 </button>
-                                <a href="${video.video_url}" download="extended-video-${index}.mp4" class="action-btn">
+                                <a href="${video.download_url || video.video_url}" download="extended-video-${index}.mp4" class="action-btn">
                                     <i class="fa-solid fa-download"></i>
                                 </a>
                             </div>

@@ -80,7 +80,7 @@ async def generate_image(
             client = get_client(location=client_location)
             
             # Configuration
-            config = types.GenerateContentConfig(
+            gen_config = types.GenerateContentConfig(
                 temperature=1,
                 top_p=0.95,
                 max_output_tokens=8192,
@@ -89,7 +89,7 @@ async def generate_image(
 
             # Specific config for Gemini 3
             if model_name == "gemini-3-pro-image-preview":
-                 config = types.GenerateContentConfig(
+                 gen_config = types.GenerateContentConfig(
                     temperature=1,
                     top_p=0.95,
                     max_output_tokens=32768,
@@ -104,7 +104,7 @@ async def generate_image(
             response = client.models.generate_content(
                 model=current_model_name,
                 contents=contents,
-                config=config
+                config=gen_config
             )
             
             print(f"DEBUG: Response candidates: {response.candidates}")
@@ -192,13 +192,13 @@ async def edit_image(
                 client = get_client(location=client_location)
 
                 # Configuration
-                config = types.GenerateContentConfig(
+                gen_config = types.GenerateContentConfig(
                      response_modalities=["IMAGE"],
                      temperature=1
                 )
                 
                 if model_name == "gemini-3-pro-image-preview":
-                        config = types.GenerateContentConfig(
+                        gen_config = types.GenerateContentConfig(
                         temperature=1,
                         top_p=0.95,
                         max_output_tokens=32768,
@@ -213,7 +213,7 @@ async def edit_image(
                 response = client.models.generate_content(
                     model=current_model_name,
                     contents=contents,
-                    config=config
+                    config=gen_config
                 )
                 
                 print(f"DEBUG: Edit Response: {response}")

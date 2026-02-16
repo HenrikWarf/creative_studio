@@ -69,7 +69,9 @@ async def generate_image_to_video(image: UploadFile, prompt: str, context: str =
                     final_blob.content_type = "video/mp4"
                     final_blob.patch()
                     video_url = generate_signed_url(output_filename)
-                    return {"video_url": video_url, "blob_name": output_filename}
+                    download_name = f"generated-video-{uuid.uuid4()}.mp4"
+                    download_url = generate_signed_url(output_filename, download_name=download_name)
+                    return {"video_url": video_url, "download_url": download_url, "blob_name": output_filename}
                 else: raise Exception("Could not locate generated video in GCS")
             else:
                 if operation.result and operation.result.generated_videos:
@@ -80,7 +82,9 @@ async def generate_image_to_video(image: UploadFile, prompt: str, context: str =
                     with urllib.request.urlopen(req) as response: video_data = response.read()
                     upload_bytes(video_data, output_filename, content_type="video/mp4")
                     video_url = generate_signed_url(output_filename)
-                    return {"video_url": video_url, "blob_name": output_filename}
+                    download_name = f"generated-video-{uuid.uuid4()}.mp4"
+                    download_url = generate_signed_url(output_filename, download_name=download_name)
+                    return {"video_url": video_url, "download_url": download_url, "blob_name": output_filename}
                 else: raise Exception("No video generated")
         except Exception as e: print(f"Error: {e}"); raise e
 
@@ -146,7 +150,9 @@ async def generate_video_first_last(first_image: UploadFile, last_image: UploadF
                     upload_bytes(video_data, output_filename, content_type="video/mp4")
                 
                 video_url = generate_signed_url(output_filename)
-                return {"video_url": video_url, "blob_name": output_filename}
+                download_name = f"transition-{uuid.uuid4()}.mp4"
+                download_url = generate_signed_url(output_filename, download_name=download_name)
+                return {"video_url": video_url, "download_url": download_url, "blob_name": output_filename}
             else: raise Exception("No video generated")
         except Exception as e: print(f"Error: {e}"); raise e
 
@@ -200,7 +206,10 @@ async def generate_video_reference(image: UploadFile, prompt: str, context: Opti
                     if "googleapis.com" in uri and api_key: req.add_header('x-goog-api-key', api_key)
                     with urllib.request.urlopen(req) as response: video_data = response.read()
                     upload_bytes(video_data, output_filename, content_type="video/mp4")
-                return {"video_url": generate_signed_url(output_filename), "blob_name": output_filename}
+                video_url = generate_signed_url(output_filename)
+                download_name = f"ref-video-{uuid.uuid4()}.mp4"
+                download_url = generate_signed_url(output_filename, download_name=download_name)
+                return {"video_url": video_url, "download_url": download_url, "blob_name": output_filename}
             else: raise Exception("No video generated")
         except Exception as e: print(f"Error: {e}"); raise e
 
@@ -251,7 +260,10 @@ async def extend_video(video: UploadFile, prompt: str, context: Optional[str] = 
                     if "googleapis.com" in uri and api_key: req.add_header('x-goog-api-key', api_key)
                     with urllib.request.urlopen(req) as response: video_data = response.read()
                     upload_bytes(video_data, output_filename, content_type="video/mp4")
-                return {"video_url": generate_signed_url(output_filename), "blob_name": output_filename}
+                video_url = generate_signed_url(output_filename)
+                download_name = f"extended-video-{uuid.uuid4()}.mp4"
+                download_url = generate_signed_url(output_filename, download_name=download_name)
+                return {"video_url": video_url, "download_url": download_url, "blob_name": output_filename}
             else: raise Exception("No video generated")
         except Exception as e: print(f"Error: {e}"); raise e
 

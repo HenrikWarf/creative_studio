@@ -40,6 +40,13 @@ export function initImageEditing() {
         });
     }
 
+    // Event Listener for external edit requests (from Project View)
+    window.addEventListener('initEditImage', (e) => {
+        if (e.detail && e.detail.file) {
+            handleEditFile(e.detail.file);
+        }
+    });
+
     // Main Image Upload
     if (editUploadArea && editFileInput) {
         editUploadArea.addEventListener('click', () => editFileInput.click());

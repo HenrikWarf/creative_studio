@@ -136,7 +136,9 @@ async def generate_video(prompt: str, aspect_ratio: str = "16:9", quality: str =
                 
                 from backend.services.storage import generate_signed_url
                 video_url = generate_signed_url(filename)
-                return {"video_url": video_url, "blob_name": filename}
+                download_name = f"generated-video-{uuid.uuid4()}.mp4"
+                download_url = generate_signed_url(filename, download_name=download_name)
+                return {"video_url": video_url, "download_url": download_url, "blob_name": filename}
 
             if operation.result and operation.result.generated_videos:
                 uri = operation.result.generated_videos[0].video.uri
@@ -164,7 +166,9 @@ async def generate_video(prompt: str, aspect_ratio: str = "16:9", quality: str =
                 
                 from backend.services.storage import generate_signed_url
                 video_url = generate_signed_url(filename)
-                return {"video_url": video_url, "blob_name": filename}
+                download_name = f"generated-video-{uuid.uuid4()}.mp4"
+                download_url = generate_signed_url(filename, download_name=download_name)
+                return {"video_url": video_url, "download_url": download_url, "blob_name": filename}
             else:
                 raise Exception("No video generated in response")
 

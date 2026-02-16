@@ -2129,3 +2129,47 @@
         </div>
     </div>
 </div>
+
+<!-- Asset Details Modal -->
+<div id="modal-asset-details" class="modal" hidden>
+    <div class="modal-content glass-panel" style="width: 700px; max-width: 90vw;">
+        <span class="close-modal" id="close-asset-details">&times;</span>
+        <h2>Asset Details</h2>
+
+        <div class="asset-details-grid" style="display: grid; gap: 1.5rem;">
+            <div id="asset-details-preview"
+                style="text-align: center; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                <!-- Image or Video injected here -->
+            </div>
+
+            <div class="input-group">
+                <label>Prompt</label>
+                <div id="asset-details-prompt" class="readonly-field"
+                    style="max-height: 100px; overflow-y: auto; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 4px; overflow-wrap: anywhere; word-break: break-word; border: 1px solid var(--border-color);">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="input-group">
+                    <label>Model</label>
+                    <div id="asset-details-model" class="readonly-field"
+                        style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 4px; border: 1px solid var(--border-color);">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Context Version</label>
+                    <div id="asset-details-version" class="readonly-field"
+                        style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 4px; border: 1px solid var(--border-color);">
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Context Data</label>
+                <div id="asset-details-context" class="readonly-field"
+                    style="max-height: 150px; overflow-y: auto; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 4px; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; border: 1px solid var(--border-color);">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

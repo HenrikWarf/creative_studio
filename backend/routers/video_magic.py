@@ -7,19 +7,19 @@ from backend.schemas import AssetCreate
 import json
 
 router = APIRouter(
-    prefix="/api/video-magic",
+    prefix="/video-magic",
     tags=["video-magic"],
     responses={404: {"description": "Not found"}},
 )
 
-@router.post("/script")
+@router.post("/script/generate")
 async def create_video_script(
     prompt: str = Form(...),
     context: Optional[str] = Form(None)
 ):
     try:
         script = await generate_script(prompt, context)
-        return script
+        return {"script": script}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -31,7 +31,7 @@ async def edit_video_script(
     try:
         script_json = json.loads(current_script)
         script = await edit_script(script_json, instructions)
-        return script
+        return {"script": script}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -55,7 +55,7 @@ async def create_image_to_video(
                 # For now, we return results.
                 pass
                 
-        return results
+        return {"videos": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -80,7 +80,7 @@ async def create_first_last_video(
 ):
     try:
         result = await generate_video_first_last(first_image, last_image, prompt, context, num_videos)
-        return result
+        return {"videos": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 @router.post("/reference-image")
@@ -92,7 +92,7 @@ async def create_reference_video(
 ):
     try:
         result = await generate_video_reference(image, prompt, context, num_videos)
-        return result
+        return {"videos": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 @router.post("/extend-video")
@@ -104,7 +104,7 @@ async def create_extend_video(
 ):
     try:
         result = await extend_video(video, prompt, context, num_videos)
-        return result
+        return {"videos": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 @router.post("/optimize-video-prompt")

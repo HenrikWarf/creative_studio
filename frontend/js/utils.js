@@ -40,6 +40,19 @@ export function switchTab(tabName) {
 
     const tab = document.getElementById(`tab-${tabName}`) || document.getElementById(tabName);
     if (tab) tab.hidden = false;
+
+    // Persist to localStorage
+    localStorage.setItem('activeTab', tabName);
+}
+
+export function initTabState() {
+    const activeTab = localStorage.getItem('activeTab');
+    if (activeTab) {
+        switchTab(activeTab);
+    } else {
+        // Default Tab (e.g. Projects or Home if set)
+        switchTab('projects');
+    }
 }
 
 export function showAlert(message) {

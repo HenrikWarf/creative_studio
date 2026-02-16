@@ -14,6 +14,15 @@ export function initVideoCreation() {
     // Initialize Context Accordion
     setupContextAccordion('btn-context-accordion-video', 'context-content-video', 'context-checkboxes-video', 'btn-apply-context-video', 'video-context', 'video-context-version', 'btn-clear-context-video');
 
+    const videoCountSlider = document.getElementById('video-count-slider');
+    const videoCountDisplay = document.getElementById('video-count-display');
+
+    if (videoCountSlider && videoCountDisplay) {
+        videoCountSlider.addEventListener('input', (e) => {
+            videoCountDisplay.textContent = e.target.value;
+        });
+    }
+
     if (btnGenerateVideo) {
         btnGenerateVideo.addEventListener('click', async () => {
             if (!currentProjectId) {
@@ -39,6 +48,10 @@ export function initVideoCreation() {
             formData.append('prompt', fullPrompt);
             formData.append('project_id', currentProjectId);
 
+            if (videoCountSlider) {
+                formData.append('num_videos', videoCountSlider.value);
+            }
+
             // Add other parameters if available in HTML (model, aspect ratio etc.)
             // Assuming simplified logic for now matching Image Creation style or backend requirements
 
@@ -59,9 +72,19 @@ export function initVideoCreation() {
                     videoResultContainer.innerHTML = '';
 
                     // Handle result (assuming list of videos or single video)
-                    const videos = data.videos || [data.video_url];
+                    // Handle result (assuming list of videos or single video)
+                    // Backend returns list of objects: {video_url, blob_name}
+                    let videos = [];
+                    if (data.videos) {
+                        videos = data.videos;
+                    } else if (data.video_url) {
+                        videos = [data]; // Treat single response as list of one object
+                    }
 
-                    videos.forEach((url, index) => {
+                    videos.forEach((video, index) => {
+                        const url = typeof video === 'string' ? video : video.video_url;
+                        const blobName = typeof video === 'string' ? (data.blob_name || '') : video.blob_name;
+
                         const card = document.createElement('div');
                         card.className = 'video-card';
                         card.innerHTML = `
@@ -70,7 +93,7 @@ export function initVideoCreation() {
                                 Your browser does not support video.
                             </video>
                              <div class="video-actions" style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem;">
-                                <button class="action-btn" onclick="saveVideoToProject('${data.blob_name || ''}', '${url}', document.getElementById('video-prompt').value, 'veo', document.getElementById('video-context').value, 'Custom', this)">
+                                <button class="action-btn" onclick="saveVideoToProject('${blobName}', '${url}', document.getElementById('video-prompt').value, 'veo', document.getElementById('video-context').value, 'Custom', this)">
                                     <i class="fa-solid fa-floppy-disk"></i> Save
                                 </button>
                                 <a href="${url}" download="generated-video-${index}.mp4" class="action-btn">

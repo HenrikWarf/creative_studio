@@ -6,8 +6,8 @@ let currentLightboxIndex = 0;
 export function initLightbox() {
     const lightboxModal = document.getElementById('lightbox-modal');
     const closeLightbox = document.querySelector('.close-lightbox');
-    const prevBtn = document.querySelector('.lightbox-prev');
-    const nextBtn = document.querySelector('.lightbox-next');
+    const prevBtn = lightboxModal ? lightboxModal.querySelector('.prev-btn') : null;
+    const nextBtn = lightboxModal ? lightboxModal.querySelector('.next-btn') : null;
     const lightboxImg = document.getElementById('lightbox-img');
     const lightboxVideo = document.getElementById('lightbox-video');
     const lightboxCaption = document.getElementById('lightbox-caption');

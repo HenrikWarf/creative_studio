@@ -17,7 +17,7 @@ def get_db():
     finally:
         db.close()
 
-@router.post("/", response_model=schemas.Project)
+@router.post("/", response_model=schemas.ProjectBrief)
 def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db)):
     db_project = models.Project(
         name=project.name, 
@@ -37,7 +37,7 @@ def create_project(project: schemas.ProjectCreate, db: Session = Depends(get_db)
     db.refresh(db_project)
     return db_project
 
-@router.get("/", response_model=List[schemas.Project])
+@router.get("/", response_model=List[schemas.ProjectBrief])
 def read_projects(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     projects = db.query(models.Project).offset(skip).limit(limit).all()
     return projects
@@ -45,9 +45,22 @@ def read_projects(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
 @router.get("/{project_id}", response_model=schemas.Project)
 def read_project(project_id: int, db: Session = Depends(get_db)):
     from sqlalchemy.orm import joinedload
+    from backend.services.storage import generate_signed_url
+    from concurrent.futures import ThreadPoolExecutor
+    
     project = db.query(models.Project).options(joinedload(models.Project.assets)).filter(models.Project.id == project_id).first()
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Sign Asset URLs for frontend access in parallel
+    def sign_asset(asset):
+        if asset.url and not asset.url.startswith("http") and not asset.url.startswith("blob:"):
+            asset.url = generate_signed_url(asset.url)
+        return asset
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        list(executor.map(sign_asset, project.assets))
+            
     return project
 
 @router.delete("/{project_id}")
@@ -63,7 +76,7 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "success"}
 
-@router.put("/{project_id}", response_model=schemas.Project)
+@router.put("/{project_id}", response_model=schemas.ProjectBrief)
 def update_project(project_id: int, project_update: schemas.ProjectCreate, db: Session = Depends(get_db)):
     db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
     if db_project is None:

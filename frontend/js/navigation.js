@@ -14,18 +14,26 @@ export function activateSection(targetId) {
 
     targetSection.classList.add('active-section');
 
+    // Save to localStorage
+    localStorage.setItem('activeSection', targetId);
+
     // Dispatch event for modules to listen to
     window.dispatchEvent(new CustomEvent('sectionActivated', { detail: { targetId } }));
 }
 
 export function initNavigation() {
     const navLinks = document.querySelectorAll('.nav-links li');
-    // Handle Hash Navigation
+    // Handle Hash Navigation or Saved State
     if (window.location.hash) {
         const targetId = window.location.hash.substring(1);
         activateSection(targetId);
     } else {
-        activateSection('home');
+        const savedSection = localStorage.getItem('activeSection');
+        if (savedSection) {
+            activateSection(savedSection);
+        } else {
+            activateSection('home');
+        }
     }
 
     navLinks.forEach(link => {

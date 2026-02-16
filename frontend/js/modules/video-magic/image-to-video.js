@@ -103,7 +103,7 @@ export function initImageToVideo() {
             formData.append('instructions', vmImgPrompt.value);
 
             try {
-                const response = await fetch('/api/video-magic/optimize-prompt', {
+                const response = await fetch('/video-magic/optimize-prompt', {
                     method: 'POST',
                     body: formData
                 });
@@ -177,7 +177,7 @@ export function initImageToVideo() {
                                 <button class="action-btn" onclick="saveVideoToProject('${video.blob_name}', '${video.video_url}', document.getElementById('vm-img-prompt').value, 'veo-3.1', document.getElementById('vm-img-context').value, window.activeContextVersionName || 'Custom / Draft', this)">
                                     <i class="fa-solid fa-floppy-disk"></i> Save
                                 </button>
-                                <a href="${video.video_url}" download="generated-video-${index}.mp4" class="action-btn">
+                                <a href="${video.download_url || video.video_url}" download="generated-video-${index}.mp4" class="action-btn">
                                     <i class="fa-solid fa-download"></i>
                                 </a>
                             </div>

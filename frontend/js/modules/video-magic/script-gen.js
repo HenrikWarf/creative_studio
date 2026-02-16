@@ -62,13 +62,13 @@ export function initScriptGen() {
             `;
 
             try {
+                const formData = new FormData();
+                formData.append('prompt', vmScriptPrompt.value);
+                if (vmScriptContext.value) formData.append('context', vmScriptContext.value);
+
                 const response = await fetch('/video-magic/script/generate', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        prompt: vmScriptPrompt.value,
-                        context: vmScriptContext.value
-                    })
+                    body: formData
                 });
 
                 if (response.ok) {
@@ -111,13 +111,14 @@ export function initScriptGen() {
 
                     setLoading(newBtn, true);
                     try {
+                        const formData = new FormData();
+                        // Backend expects 'current_script' as a JSON string
+                        formData.append('current_script', JSON.stringify(currentScriptData));
+                        formData.append('instructions', instructions.value);
+
                         const response = await fetch('/video-magic/script/edit', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                current_script: currentScriptData,
-                                instructions: instructions.value
-                            })
+                            body: formData
                         });
 
                         if (response.ok) {
