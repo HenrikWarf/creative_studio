@@ -1,42 +1,43 @@
 # Creative Studio
 
-Creative Studio is a comprehensive web application designed for professional content creation. It leverages advanced AI models (Gemini 2.5, Veo) to streamline the workflow from ideation to asset generation.
+Creative Studio is a high-performance web application designed for professional content creation. It leverages Google's state-of-the-art AI models (Gemini 3, Gemini 2.5, Veo) to provide a seamless, high-speed workflow for asset generation, editing, and brand management.
 
 ## Key Features
 
 ### 1. Project Management & Context Engineering
--   **Projects**: Organize your work into projects.
--   **Context Engineering**: Define the "DNA" of your project and brand.
-    -   **Brand Core**: Define Vibe, Lighting, Colors, and Subject for your brand.
-    -   **Project Specifics**: Override or extend brand settings for specific campaigns.
-    -   **Context Versions**: Save and manage multiple versions of your context to experiment with different styles.
-    -   **Prompt Synthesis**: Automatically generates detailed prompts based on your defined context.
+-   **Intelligent Projects**: Organize creative work into smart projects.
+-   **Context Engineering**: Define the specific "DNA" of a brand and project.
+    -   **Brand Core & Project Specifics**: Multi-layer context management for consistent aesthetics.
+    -   **Context Versions**: Version control for brand guidelines and project metadata.
+    -   **AI Prompt Synthesis**: Automatically generate production-ready prompts from high-level context.
 
-### 2. Image Creation
--   **Text-to-Image**: Generate high-quality creative images using Gemini 2.5.
--   **Multi-Image Generation**: Generate 1-3 images simultaneously to explore variations.
--   **Reference Inputs**: Upload Style, Product, and Scene reference images to guide the generation.
--   **Style Presets**: Choose from predefined styles (e.g., Cinematic, Studio, Neon) or define your own.
+### 2. High-Fidelity Image Creation
+-   **Dual-Model Pipeline**:
+    -   **Gemini 3 Pro Image**: High-fidelity, production-quality generation.
+    -   **Gemini 2.5 Flash Image**: Ultra-fast generation for rapid iteration.
+-   **Reference-Guided Generation**: Use **Style**, **Product**, and **Scene** images to strictly control the AI output.
+-   **Asset Metadata**: Every saved asset captures its full generating prompt, model version, and exact context state for perfect reproducability.
 
-### 3. Image Magic (Editing)
--   **AI Editing**: Modify existing images using natural language instructions (e.g., "Change the background to a beach").
--   **Multi-Image Editing**: Generate multiple edited versions at once.
--   **Context-Aware**: Uses your project's context to ensure edits align with the brand voice.
+### 3. Image Magic (In-Painting & Editing)
+-   **Natural Language Editing**: Modify images using conversational instructions.
+-   **Context-Aware Modifications**: Edits automatically respect the project's brand guidelines (lighting, vibe, etc.).
 
-### 4. Virtual Try-On (VTO)
--   **Product Visualization**: Visualize products in context (e.g., garments on models, furniture in rooms).
--   **Multi-Garment**: Try on multiple garments sequentially.
+### 4. Video Magic & Veo Integration
+-   **Cinematic Video Creation**: Generate short, high-quality video clips using Google's Veo.
+-   **Video In-filling**: Create smooth transitions between first and last frames.
+-   **Video Extension**: Extend existing clips while maintaining visual consistency.
 
-### 5. Video Creation
--   **Text-to-Video**: Generate short video clips using the Veo model.
+### 5. Performance & Architecture
+-   **Ultra-Fast Loading**: Optimized backend uses parallel GCS signed URL generation and lazy-loading of assets.
+-   **Modular Frontend**: Built with modern ES6 modules for high maintainability.
+-   **Persistent State**: Remembers your active tab and project session across reloads.
 
 ## Tech Stack
 
--   **Frontend**: HTML5, CSS3 (Custom Design System), Vanilla JavaScript.
--   **Backend**: Python, FastAPI.
--   **AI Models**: Google Gemini 2.5 (Flash/Pro), Veo, Imagen 3.
--   **Storage**: Google Cloud Storage (GCS).
--   **Database**: SQLite (for local development/metadata).
+-   **Frontend**: Vanilla JavaScript (ES6 Modules), HTML5, CSS3.
+-   **Backend**: Python, FastAPI, SQLAlchemy (SQLite).
+-   **AI Services**: Google Vertex AI / GenAI (Gemini 3, Gemini 2.5 Pro/Flash, Veo).
+-   **Storage**: Google Cloud Storage (GCS) for high-performance asset serving.
 
 ## Setup
 
@@ -51,14 +52,14 @@ Creative Studio is a comprehensive web application designed for professional con
     pip install -r requirements.txt
     ```
 4.  **Environment Variables**
-    Create a `.env` file in the root directory with the following:
+    Create a `.env` file in the root directory:
     ```env
     GOOGLE_API_KEY=your_api_key_here
     GCS_BUCKET_NAME=your_gcs_bucket_name
     GOOGLE_CLOUD_PROJECT=your_project_id
+    GOOGLE_APPLICATION_CREDENTIALS=/path/to/your/service-account.json
     ```
 5.  **Google Cloud Authentication**
-    Ensure you are authenticated with Google Cloud:
     ```bash
     gcloud auth application-default login
     ```
@@ -66,14 +67,11 @@ Creative Studio is a comprehensive web application designed for professional con
 ## Running Locally
 
 ```bash
-uvicorn backend.main:app --reload --port 8080
+uvicorn backend.main:app --reload --port 8888
 ```
-Access the app at `http://localhost:8080`.
+Access the app at `http://localhost:8888`.
 
-## Deployment
-
-The application is containerized and ready for deployment to Google Cloud Run.
-
-```bash
-./build_and_deploy.sh
-```
+## Documentation
+-   [Architecture Overview](ARCHITECTURE.md)
+-   [Code Review & Recommendations](CODE_REVIEW.md)
+-   [Build & Deploy](build_and_deploy.sh)
